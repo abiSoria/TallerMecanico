@@ -1,0 +1,108 @@
+"""API inicial para registro, autenticación, cambio de contraseña y salud."""
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, joinedload
+from app.auth import current_user, require_roles
+from app.config import settings
+from app.database import get_db
+from app.models import AuditLog, Client, Role, User
+from app.schemas import AuthOut, ChangePasswordIn, LoginIn, RegisterIn, StaffUserCreate, UserOut
+from app.security import create_access_token, hash_password, verify_password
+
+app = FastAPI(title=settings.app_name, version="1.0.0")
+app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
+
+
+def user_output(user: User) -> UserOut:
+    return UserOut(id=user.id, full_name=user.full_name, email=user.email, role=user.role.name)
+
+
+def auth_output(user: User) -> AuthOut:
+    return AuthOut(access_token=create_access_token(user.id, user.role.name), expires_in=settings.access_token_minutes * 60, user=user_output(user))
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post(f"{settings.api_prefix}/auth/register", response_model=AuthOut, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterIn, db: Session = Depends(get_db)):
+    email = str(payload.email).lower()
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo")
+    # Los registros públicos siempre son clientes: nunca aceptamos el rol desde el cliente.
+    role = db.query(Role).filter(Role.name == "cliente").first()
+    if not role:
+        raise HTTPException(status_code=500, detail="Falta configurar el rol cliente en la base de datos")
+    user = User(role_id=role.id, full_name=payload.full_name, email=email, password_hash=hash_password(payload.password))
+    try:
+        db.add(user)
+        db.flush()
+        db.add(Client(user_id=user.id, phone=payload.phone))
+        db.add(AuditLog(user_id=user.id, action="auth.register", detail="Cuenta de cliente creada"))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo")
+    db.refresh(user)
+    user = db.query(User).options(joinedload(User.role)).get(user.id)
+    return auth_output(user)
+
+
+@app.post(f"{settings.api_prefix}/auth/login", response_model=AuthOut)
+def login(payload: LoginIn, db: Session = Depends(get_db)):
+    user = db.query(User).options(joinedload(User.role)).filter(User.email == str(payload.email).lower()).first()
+    # Respuesta genérica evita revelar si el correo está registrado.
+    if not user or not user.is_active or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos", headers={"WWW-Authenticate": "Bearer"})
+    db.add(AuditLog(user_id=user.id, action="auth.login", detail="Inicio de sesión correcto"))
+    db.commit()
+    return auth_output(user)
+
+
+@app.get(f"{settings.api_prefix}/auth/me", response_model=UserOut)
+def me(user: User = Depends(current_user)):
+    return user_output(user)
+
+
+@app.post(f"{settings.api_prefix}/auth/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(payload: ChangePasswordIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="La contraseña actual no es correcta")
+    if verify_password(payload.new_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="La nueva contraseña debe ser distinta")
+    user.password_hash = hash_password(payload.new_password)
+    db.add(AuditLog(user_id=user.id, action="auth.password_changed", detail="Contraseña actualizada"))
+    db.commit()
+
+
+@app.get(f"{settings.api_prefix}/admin/users", response_model=list[UserOut])
+def list_staff_users(db: Session = Depends(get_db), admin: User = Depends(require_roles("administrador"))):
+    users = db.query(User).options(joinedload(User.role)).filter(
+        User.role.has(Role.name != "cliente")
+    ).order_by(User.created_at.desc()).all()
+    return [user_output(item) for item in users]
+
+
+@app.post(f"{settings.api_prefix}/admin/users", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def create_staff_user(payload: StaffUserCreate, db: Session = Depends(get_db), admin: User = Depends(require_roles("administrador"))):
+    email = str(payload.email).lower()
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo")
+    role = db.query(Role).filter(Role.name == payload.role).first()
+    if not role:
+        raise HTTPException(status_code=422, detail="El rol todavía no está configurado en la base de datos")
+    user = User(role_id=role.id, full_name=payload.full_name, email=email, password_hash=hash_password(payload.password))
+    try:
+        db.add(user)
+        db.flush()
+        db.add(AuditLog(user_id=admin.id, action="admin.user_created", detail=f"Cuenta {payload.role} creada para {email}"))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo")
+    db.refresh(user)
+    created = db.query(User).options(joinedload(User.role)).filter(User.id == user.id).one()
+    return user_output(created)

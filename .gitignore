@@ -1,0 +1,16 @@
+# Secretos locales y archivos de entorno
+**/.env
+**/.env.*
+!**/.env.example
+
+# Entornos Python
+**/.venv/
+**/__pycache__/
+*.py[cod]
+
+# Dependencias y compilación frontend
+**/node_modules/
+**/dist/
+**/.npm-cache/
+**/*.tsbuildinfo
+
