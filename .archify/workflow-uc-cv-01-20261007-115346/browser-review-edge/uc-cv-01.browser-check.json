@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "browser-check",
+  "evidenceKind": "automated-browser",
+  "status": "fail",
+  "visualReview": "not-requested",
+  "provenance": "current",
+  "deliveryReceiptId": "e3ead032-0451-4b46-a93b-2e5bfac84503",
+  "artifact": {
+    "path": "C:\\TallerMecanico\\.archify\\workflow-uc-cv-01-20261007-115346\\uc-cv-01.html",
+    "sha256": "c4f34912d6093ba188076a897881af70e4a8a30888df378a983ca37c54f2bb70",
+    "bytes": 748296
+  },
+  "state": {
+    "detail": "read",
+    "motion": "still"
+  },
+  "chrome": {
+    "status": "available",
+    "executable": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "C:\\TallerMecanico\\.archify\\workflow-uc-cv-01-20261007-115346\\uc-cv-01.html"
+      },
+      "evidence": {
+        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome stderr:\n[32112:13212:1007/115539.509:ERROR:components\\os_crypt\\async\\browser\\os_crypt_win.cc:63] Failed to encrypt: The system cannot find the file specified. (0x2)\r\n[32112:28756:1007/115539.546:ERROR:chrome\\installer\\util\\google_update_settings_win.cc:544] Failed opening key Software\\Microsoft\\EdgeUpdate\\ClientStateMedium\\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set usagestats; result: 5\r\n[32112:28756:1007/115539.546:ERROR:chrome\\installer\\util\\google_update_settings_win.cc:587] Failed opening key Software\\Microsoft\\EdgeUpdate\\ClientStateMedium\\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set urlstats; result: 5\r\n[32112:33308:1007/115545.120:ERROR:components\\password_manager\\core\\browser\\password_store\\login_database_async_helper.cc:229] Encryption is not available.\r\n[32112:22720:1007/115545.120:ERROR:components\\password_manager\\core\\browser\\password_store\\login_database_async_helper.cc:229] Encryption is not available.\r\n[32112:31284:1007/115545.283:ERROR:chrome\\installer\\util\\google_update_settings_win.cc:544] Failed opening key Software\\Microsoft\\EdgeUpdate\\ClientStateMedium\\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set usagestats; result: 5\r\n[32112:13212:1007/115545.283:ERROR:chrome\\browser\\ui\\edge_window_tab_manager\\api\\wtm_interface_impl.cc:463] Failed to open registry key\r\n[32112:13212:1007/115545.283:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:28756:1007/115545.294:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:28756:1007/115545.374:ERROR:chrome\\common\\importer\\edge_chrome_importer_utils.cc:55] Unable to read local state file Access denied.\r\n[32112:13212:1007/115545.392:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:22720:1007/115545.408:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:13212:1007/115545.442:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:22720:1007/115545.445:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:31160:1007/115545.463:ERROR:services\\device\\public\\cpp\\geolocation\\system_geolocation_source_win.cc:124] Failed to create IAppCapability: Access is denied. (0x80070005)\r\n[32112:13212:1007/115545.467:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:13212:1007/115545.487:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:21128:1007/115545.487:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:13212:1007/115545.500:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:13212:1007/115545.500:FATAL:content\\browser\\gpu\\gpu_data_manager_impl_private.cc:436] GPU process isn't usable. Goodbye.\nChrome transport: Node v24.21.0, libuv 1.52.1, win32; pid=32112, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=2102, messages=3, bufferedBytes=0.\nChrome write pipe: writable=false, ended=true, destroyed=false, completedWrites=3, writtenBytes=255, bufferedBytes=0."
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "containment": {
+    "status": "fail",
+    "policy": "fit-or-reader-declared-readable-vertical-scroll",
+    "viewports": []
+  },
+  "themeStates": {
+    "status": "fail",
+    "viewports": []
+  },
+  "readability": {
+    "status": "fail",
+    "minimumProjectedNodeTextPx": 6,
+    "viewports": []
+  },
+  "viewerChrome": {
+    "status": "fail",
+    "viewports": []
+  },
+  "captures": {
+    "status": "not-requested",
+    "screenshots": [],
+    "contactSheet": null
+  },
+  "sidecars": {
+    "directory": "C:\\TallerMecanico\\.archify\\workflow-uc-cv-01-20261007-115346\\browser-review-edge",
+    "receipt": "uc-cv-01.browser-check.json",
+    "files": []
+  },
+  "error": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome stderr:\n[32112:13212:1007/115539.509:ERROR:components\\os_crypt\\async\\browser\\os_crypt_win.cc:63] Failed to encrypt: The system cannot find the file specified. (0x2)\r\n[32112:28756:1007/115539.546:ERROR:chrome\\installer\\util\\google_update_settings_win.cc:544] Failed opening key Software\\Microsoft\\EdgeUpdate\\ClientStateMedium\\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set usagestats; result: 5\r\n[32112:28756:1007/115539.546:ERROR:chrome\\installer\\util\\google_update_settings_win.cc:587] Failed opening key Software\\Microsoft\\EdgeUpdate\\ClientStateMedium\\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set urlstats; result: 5\r\n[32112:33308:1007/115545.120:ERROR:components\\password_manager\\core\\browser\\password_store\\login_database_async_helper.cc:229] Encryption is not available.\r\n[32112:22720:1007/115545.120:ERROR:components\\password_manager\\core\\browser\\password_store\\login_database_async_helper.cc:229] Encryption is not available.\r\n[32112:31284:1007/115545.283:ERROR:chrome\\installer\\util\\google_update_settings_win.cc:544] Failed opening key Software\\Microsoft\\EdgeUpdate\\ClientStateMedium\\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set usagestats; result: 5\r\n[32112:13212:1007/115545.283:ERROR:chrome\\browser\\ui\\edge_window_tab_manager\\api\\wtm_interface_impl.cc:463] Failed to open registry key\r\n[32112:13212:1007/115545.283:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:28756:1007/115545.294:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:28756:1007/115545.374:ERROR:chrome\\common\\importer\\edge_chrome_importer_utils.cc:55] Unable to read local state file Access denied.\r\n[32112:13212:1007/115545.392:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:22720:1007/115545.408:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:13212:1007/115545.442:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:22720:1007/115545.445:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:31160:1007/115545.463:ERROR:services\\device\\public\\cpp\\geolocation\\system_geolocation_source_win.cc:124] Failed to create IAppCapability: Access is denied. (0x80070005)\r\n[32112:13212:1007/115545.467:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:13212:1007/115545.487:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:21128:1007/115545.487:ERROR:components\\viz\\host\\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory \"C:\\Users\\AbiSoria\\AppData\\Local\\Temp\\archify-visual-check-profile-P1B0re\\GPUPersistentCache\\DawnGraphiteCache\\H6POMLZSBZPTMTLBCTMXRDH27BAKUDTA\", error: 0: The process cannot access the file because it is being used by another process. (0x20)\r\n[32112:13212:1007/115545.500:ERROR:content\\browser\\gpu\\gpu_process_host.cc:1190] GPU process exited unexpectedly: exit_code=-1073741790\r\n[32112:13212:1007/115545.500:FATAL:content\\browser\\gpu\\gpu_data_manager_impl_private.cc:436] GPU process isn't usable. Goodbye.\nChrome transport: Node v24.21.0, libuv 1.52.1, win32; pid=32112, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=2102, messages=3, bufferedBytes=0.\nChrome write pipe: writable=false, ended=true, destroyed=false, completedWrites=3, writtenBytes=255, bufferedBytes=0."
+}

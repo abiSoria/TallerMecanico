@@ -23,15 +23,21 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     role: Mapped[Role] = relationship(back_populates="users")
-    client: Mapped["Client | None"] = relationship(back_populates="user", uselist=False)
 
 
 class Client(Base):
     __tablename__ = "clients"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), unique=True)
-    phone: Mapped[str | None] = mapped_column(String(20))
-    user: Mapped[User | None] = relationship(back_populates="client")
+    full_name: Mapped[str] = mapped_column(Text, nullable=False)
+    street: Mapped[str] = mapped_column(Text, nullable=False)
+    number: Mapped[str] = mapped_column(Text, nullable=False)
+    neighborhood: Mapped[str] = mapped_column(Text, nullable=False)
+    municipality: Mapped[str] = mapped_column(Text, nullable=False)
+    state: Mapped[str] = mapped_column(Text, nullable=False)
+    primary_phone: Mapped[str] = mapped_column(Text, nullable=False)
+    alternate_phone: Mapped[str] = mapped_column(Text, nullable=False)
+    email: Mapped[str] = mapped_column(Text, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     vehicles: Mapped[list["Vehicle"]] = relationship(back_populates="client")
 
 
@@ -64,3 +70,4 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(80), nullable=False)
     detail: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+

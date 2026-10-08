@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "e613fa9b-4de2-41e5-a94e-72beed40f185",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\TallerMecanico\\.archify\\workflow-uc-cv-01-20261007-115346\\candidate.json",
+  "output": "C:\\TallerMecanico\\.archify\\workflow-uc-cv-01-20261007-115346\\uc-cv-01.html",
+  "specification": {
+    "sha256": "60dae950c723d4d7cc11514283dd1deb702d8b3c93dbd5d469d3b8d54883290a",
+    "bytes": 1628
+  },
+  "artifact": {
+    "sha256": "c4f34912d6093ba188076a897881af70e4a8a30888df378a983ca37c54f2bb70",
+    "bytes": 748296
+  }
+}

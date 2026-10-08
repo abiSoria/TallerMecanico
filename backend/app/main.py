@@ -1,6 +1,7 @@
 """API inicial para registro, autenticación, cambio de contraseña y salud."""
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+import re
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from app.auth import current_user, require_roles
@@ -9,9 +10,12 @@ from app.database import get_db
 from app.models import AuditLog, Client, Role, User
 from app.schemas import AuthOut, ChangePasswordIn, LoginIn, RegisterIn, StaffUserCreate, UserOut
 from app.security import create_access_token, hash_password, verify_password
+from app.client_registration import ClientOut, ClientRegistrationAuditOut, ClientRegistrationFacade, ClientRegistrationIn
+from app.password_recovery import ForgotPasswordIn, ResetPasswordIn, request_password_reset, reset_password
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
+client_registration = ClientRegistrationFacade()
 
 
 def user_output(user: User) -> UserOut:
@@ -27,6 +31,39 @@ def health():
     return {"status": "ok"}
 
 
+@app.post(f"{settings.api_prefix}/clients", response_model=dict, status_code=status.HTTP_201_CREATED)
+def register_client(payload: ClientRegistrationIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    client, duplicate_confirmed = client_registration.register(db, user, payload)
+    return {"code": "SUCCESS", "message": "Cliente registrado correctamente.", "data": ClientOut.model_validate(client), "duplicate_confirmed": duplicate_confirmed}
+
+
+@app.get(f"{settings.api_prefix}/admin/client-registrations", response_model=list[ClientRegistrationAuditOut])
+def list_client_registrations(db: Session = Depends(get_db), admin: User = Depends(require_roles("administrador"))):
+    entries = db.query(AuditLog, User).outerjoin(User, User.id == AuditLog.user_id).filter(
+        AuditLog.action == "client.registered"
+    ).order_by(AuditLog.created_at.desc()).all()
+    client_ids = {
+        int(match.group(1))
+        for entry, _actor in entries
+        if entry.detail and (match := re.fullmatch(r"client_id=(\d+)", entry.detail))
+    }
+    if not client_ids:
+        return []
+
+    clients = {client.id: client for client in db.query(Client).filter(Client.id.in_(client_ids)).all()}
+    result = []
+    for entry, actor in entries:
+        match = re.fullmatch(r"client_id=(\d+)", entry.detail or "")
+        client = clients.get(int(match.group(1))) if match else None
+        if client:
+            result.append(ClientRegistrationAuditOut(
+                client_name=client.full_name,
+                registered_by=actor.full_name if actor else "Usuario no disponible",
+                registered_at=entry.created_at,
+            ))
+    return result
+
+
 @app.post(f"{settings.api_prefix}/auth/register", response_model=AuthOut, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterIn, db: Session = Depends(get_db)):
     email = str(payload.email).lower()
@@ -40,7 +77,6 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
     try:
         db.add(user)
         db.flush()
-        db.add(Client(user_id=user.id, phone=payload.phone))
         db.add(AuditLog(user_id=user.id, action="auth.register", detail="Cuenta de cliente creada"))
         db.commit()
     except IntegrityError:
@@ -60,6 +96,16 @@ def login(payload: LoginIn, db: Session = Depends(get_db)):
     db.add(AuditLog(user_id=user.id, action="auth.login", detail="Inicio de sesión correcto"))
     db.commit()
     return auth_output(user)
+
+
+@app.post(f"{settings.api_prefix}/auth/forgot-password")
+def forgot_password(payload: ForgotPasswordIn, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    return request_password_reset(db, payload, background_tasks)
+
+
+@app.post(f"{settings.api_prefix}/auth/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+def reset_account_password(payload: ResetPasswordIn, db: Session = Depends(get_db)):
+    reset_password(db, payload)
 
 
 @app.get(f"{settings.api_prefix}/auth/me", response_model=UserOut)

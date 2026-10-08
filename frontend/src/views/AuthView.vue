@@ -76,6 +76,7 @@ function changeMode(next: 'login' | 'register') {
             <v-btn color="primary" type="submit" size="large" block :loading="loading">Iniciar sesión <v-icon end icon="mdi-arrow-right" /></v-btn>
           </v-form>
           <p class="auth-switch">¿Aún no tienes cuenta? <button type="button" @click="changeMode('register')">Crear cuenta</button></p>
+          <p class="auth-switch"><button type="button" @click="router.push('/recuperar-contrasena')">¿Olvidaste tu contraseña?</button></p>
           <p class="secure-note"><v-icon icon="mdi-shield-check-outline" size="small" /> Tus datos viajan protegidos.</p>
         </template>
         <template v-else>

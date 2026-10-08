@@ -26,9 +26,16 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS clients (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT UNIQUE,
-  phone VARCHAR(20),
-  CONSTRAINT fk_clients_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  full_name TEXT NOT NULL,
+  street TEXT NOT NULL,
+  number TEXT NOT NULL,
+  neighborhood TEXT NOT NULL,
+  municipality TEXT NOT NULL,
+  state TEXT NOT NULL,
+  primary_phone TEXT NOT NULL,
+  alternate_phone TEXT NOT NULL,
+  email TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS vehicles (
@@ -68,4 +75,3 @@ INSERT IGNORE INTO roles (name, description) VALUES
  ('tecnico', 'Diagnóstico y actualización de reparaciones'),
  ('cliente', 'Consulta de sus vehículos y órdenes'),
  ('sistema', 'Procesos automáticos y auditoría interna');
-

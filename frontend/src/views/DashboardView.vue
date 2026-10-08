@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { api, type StaffUserData, type User } from '../api'
+import { ApiError, api, type ClientRegistrationAudit, type ClientRegistrationData, type StaffUserData, type User } from '../api'
 import { session } from '../session'
 import { emailRule, nameRule, passwordRule } from '../validation'
 
@@ -12,6 +12,8 @@ const profile = computed(() => profiles[role.value] ?? profiles.cliente)
 const token = session.token.value!
 const passwordDialog = ref(false)
 const staffDialog = ref(false)
+const clientDialog = ref(false)
+const duplicateDialog = ref(false)
 const busy = ref(false)
 const error = ref('')
 const message = ref('')
@@ -19,6 +21,12 @@ const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 const staff = ref<User[]>([])
+const clientRegistrations = ref<ClientRegistrationAudit[]>([])
+const clientRegistrationsLoading = ref(false)
+const clientRegistrationsError = ref('')
+const duplicateClientId = ref<number | undefined>()
+const emptyClient = (): ClientRegistrationData => ({ full_name: '', street: '', number: '', neighborhood: '', municipality: '', state: '', primary_phone: '', alternate_phone: '', email: '' })
+const newClient = ref<ClientRegistrationData>(emptyClient())
 const staffLoading = ref(false)
 const newStaff = ref({ full_name: '', email: '', password: '', role: 'recepcionista' as StaffUserData['role'] })
 const allowedStaffRoles: Array<{ title: string; value: StaffUserData['role'] }> = [
@@ -37,20 +45,41 @@ const roleColors: Record<string, string> = {
 }
 const confirmationRule = (value: string) => value === newPassword.value || 'Las contraseñas no coinciden.'
 const staffPasswordRule = (value: string) => passwordRule(value)
+const requiredClientData = (value: string) => Boolean(value?.trim()) || 'Campo obligatorio.'
+const clientPhoneRule = (value: string) => /^(?=(?:\D*\d){7,})[+0-9() -]{7,20}$/.test(value.trim()) || 'Ingresa un teléfono válido.'
+
+function openClientDialog() { error.value = ''; newClient.value = emptyClient(); clientDialog.value = true }
+function closeClientDialog() { clientDialog.value = false; duplicateDialog.value = false; error.value = '' }
+
+async function saveClient(confirmDuplicate = false) {
+  busy.value = true; error.value = ''
+  try {
+    const result = await api.registerClient(token, newClient.value, confirmDuplicate)
+    message.value = result.message
+    closeClientDialog()
+    newClient.value = emptyClient()
+    if (role.value === 'administrador') await loadClientRegistrations()
+  } catch (err) {
+    if (err instanceof ApiError && err.code === 'POSSIBLE_DUPLICATE') {
+      duplicateClientId.value = err.possibleClientId
+      duplicateDialog.value = true
+    } else error.value = err instanceof Error ? err.message : 'No se pudo registrar el cliente.'
+  } finally { busy.value = false }
+}
 
 const profiles: Record<string, { eyebrow: string; title: string; description: string; icon: string; sticker: string; tone: string; modules: Array<{ title: string; caption: string; icon: string; color: string; tag: string }> }> = {
   administrador: {
     eyebrow: 'CENTRO DE MANDO', title: 'Todo el taller, de un vistazo.', description: 'Coordina el equipo y mantén el trabajo avanzando. Hoy es un buen día para dejarlo todo afinado.', icon: 'mdi-view-dashboard-variant', sticker: 'PIT CREW', tone: 'mint',
     modules: [
       { title: 'Equipo y accesos', caption: 'Crea cuentas y asigna perfiles al personal.', icon: 'mdi-account-multiple-plus', color: 'teal', tag: 'GESTIÓN' },
-      { title: 'Clientes y vehículos', caption: 'Consulta la información del taller.', icon: 'mdi-car-multiple', color: 'coral', tag: 'CLIENTES' },
+      { title: 'Clientes', caption: 'Registra nuevos clientes del taller.', icon: 'mdi-account-plus', color: 'coral', tag: 'CLIENTES' },
       { title: 'Órdenes activas', caption: 'Revisa el trabajo en curso.', icon: 'mdi-clipboard-text-clock', color: 'yellow', tag: 'OPERACIÓN' },
     ],
   },
   recepcionista: {
     eyebrow: 'RECEPCIÓN', title: 'La primera parada del taller.', description: 'Recibe cada vehículo con una sonrisa y deja todo listo para que el equipo se ponga en marcha.', icon: 'mdi-door-open', sticker: 'HOLA, EQUIPO', tone: 'peach',
     modules: [
-      { title: 'Clientes', caption: 'Próximamente: registro y datos de contacto.', icon: 'mdi-account-plus', color: 'teal', tag: 'RECEPCIÓN' },
+      { title: 'Clientes', caption: 'Registra nuevos clientes del taller.', icon: 'mdi-account-plus', color: 'teal', tag: 'RECEPCIÓN' },
       { title: 'Vehículos', caption: 'Próximamente: alta y ficha del vehículo.', icon: 'mdi-car-side', color: 'coral', tag: 'INVENTARIO' },
       { title: 'Nueva orden', caption: 'Próximamente: recepción de una reparación.', icon: 'mdi-clipboard-plus', color: 'yellow', tag: 'ÓRDENES' },
     ],
@@ -93,6 +122,19 @@ async function loadStaff() {
   finally { staffLoading.value = false }
 }
 
+async function loadClientRegistrations() {
+  if (role.value !== 'administrador') return
+  clientRegistrationsLoading.value = true
+  clientRegistrationsError.value = ''
+  try { clientRegistrations.value = await api.clientRegistrations(token) }
+  catch (err) { clientRegistrationsError.value = err instanceof Error ? err.message : 'No se pudo cargar el registro de clientes.' }
+  finally { clientRegistrationsLoading.value = false }
+}
+
+function formatRegistrationDate(value: string) {
+  return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+}
+
 async function createStaffAccount() {
   busy.value = true; error.value = ''; message.value = ''
   try {
@@ -119,7 +161,7 @@ async function updatePassword() {
 
 function logout() { session.clear(); void router.push('/ingresar') }
 function closeStaffDialog() { staffDialog.value = false; error.value = '' }
-onMounted(loadStaff)
+onMounted(() => { void loadStaff(); void loadClientRegistrations() })
 </script>
 
 <template>
@@ -160,12 +202,16 @@ onMounted(loadStaff)
           <v-btn v-if="role === 'administrador'" color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="staffDialog = true">Agregar al equipo</v-btn>
         </div>
 
+        <div v-if="role === 'administrador' || role === 'recepcionista'" class="d-flex justify-end mb-4">
+          <v-btn color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="openClientDialog">Registrar cliente</v-btn>
+        </div>
+
         <v-row class="module-grid">
           <v-col v-for="(module, index) in profile.modules" :key="module.title" cols="12" sm="6" md="4">
             <v-card class="module-card h-100" :style="{ '--card-delay': `${index * 80}ms` }" rounded="xl" elevation="0">
               <div class="module-card-top"><span class="module-icon" :class="`icon-${module.color}`"><v-icon :icon="module.icon" size="25" /></span><span class="module-tag">{{ module.tag }}</span></div>
               <h3>{{ module.title }}</h3><p>{{ module.caption }}</p>
-              <div class="module-card-bottom"><span class="coming-soon"><i />EN PREPARACIÓN</span><v-icon icon="mdi-arrow-up-right" size="18" class="module-arrow" /></div>
+              <div class="module-card-bottom"><span v-if="module.title !== 'Clientes' || (role !== 'administrador' && role !== 'recepcionista')" class="coming-soon"><i />EN PREPARACIÓN</span><span v-else class="coming-soon">DISPONIBLE</span><v-icon icon="mdi-arrow-up-right" size="18" class="module-arrow" /></div>
             </v-card>
           </v-col>
         </v-row>
@@ -180,9 +226,50 @@ onMounted(loadStaff)
           <div class="team-footer"><v-icon icon="mdi-shield-check-outline" size="17" />El rol de sistema queda reservado para tareas automatizadas.</div>
         </v-card>
 
+        <v-card v-if="role === 'administrador'" class="team-card mt-7" rounded="xl" elevation="0">
+          <div class="team-heading"><div><div class="section-kicker">AUDITORÍA</div><h2>Registros</h2><p>Consulta quién registró cada cliente y cuándo.</p></div><v-avatar color="secondary" size="52"><v-icon icon="mdi-clipboard-text-clock-outline" color="teal-darken-3" /></v-avatar></div>
+          <v-progress-linear v-if="clientRegistrationsLoading" indeterminate color="primary" />
+          <v-alert v-else-if="clientRegistrationsError" type="error" variant="tonal" class="mt-4">{{ clientRegistrationsError }}</v-alert>
+          <div v-else-if="clientRegistrations.length" class="registration-table-scroll">
+            <table class="registration-table">
+              <thead><tr><th>Cliente</th><th>Lo agregó</th><th>Fecha y hora</th></tr></thead>
+              <tbody><tr v-for="(entry, index) in clientRegistrations" :key="`${entry.registered_at}-${index}`"><td>{{ entry.client_name }}</td><td>{{ entry.registered_by }}</td><td>{{ formatRegistrationDate(entry.registered_at) }}</td></tr></tbody>
+            </table>
+          </div>
+          <div v-else class="empty-team"><v-icon icon="mdi-clipboard-text-clock-outline" size="32" /><p>Aún no hay clientes registrados.</p></div>
+        </v-card>
+
         <footer class="garage-footer"><span>HECHO CON CUIDADO EN EL TALLER</span><span>✳ &nbsp; Kilómetro a kilómetro.</span></footer>
       </v-container>
     </v-main>
+
+    <v-dialog v-model="clientDialog" max-width="760">
+      <v-card class="dialog-card" rounded="xl">
+        <v-card-title class="dialog-title"><span class="dialog-icon"><v-icon icon="mdi-account-plus" /></span><span>Registrar cliente</span></v-card-title>
+        <v-card-subtitle>Captura los datos del cliente para el taller.</v-card-subtitle>
+        <v-card-text class="pt-5">
+          <v-form @submit.prevent="saveClient()">
+            <v-row dense>
+              <v-col cols="12"><v-text-field v-model="newClient.full_name" label="Nombre completo" :rules="[requiredClientData]" required /></v-col>
+              <v-col cols="12" sm="8"><v-text-field v-model="newClient.street" label="Calle" :rules="[requiredClientData]" required /></v-col>
+              <v-col cols="12" sm="4"><v-text-field v-model="newClient.number" label="Número" :rules="[requiredClientData]" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="newClient.neighborhood" label="Colonia" :rules="[requiredClientData]" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="newClient.municipality" label="Municipio" :rules="[requiredClientData]" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="newClient.state" label="Estado" :rules="[requiredClientData]" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="newClient.primary_phone" label="Teléfono principal" type="tel" :rules="[requiredClientData, clientPhoneRule]" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="newClient.alternate_phone" label="Teléfono alterno" type="tel" :rules="[requiredClientData, clientPhoneRule]" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="newClient.email" label="Correo electrónico" type="email" :rules="[requiredClientData, emailRule]" required /></v-col>
+            </v-row>
+            <v-alert v-if="error" type="error" variant="tonal" class="mt-3">{{ error }}</v-alert>
+            <div class="dialog-actions mt-5"><v-btn variant="text" class="text-none" @click="closeClientDialog">Cancelar</v-btn><v-btn color="primary" type="submit" rounded="lg" class="text-none" :loading="busy">Guardar <v-icon end icon="mdi-arrow-right" /></v-btn></div>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="duplicateDialog" max-width="480">
+      <v-card class="dialog-card" rounded="xl"><v-card-title class="dialog-title"><span class="dialog-icon"><v-icon icon="mdi-account-alert-outline" /></span><span>Posible cliente duplicado</span></v-card-title><v-card-text>Se encontró una coincidencia (cliente {{ duplicateClientId }}). ¿Confirmas que deseas continuar con el registro?</v-card-text><v-card-actions class="dialog-actions"><v-btn variant="text" class="text-none" @click="duplicateDialog = false">Revisar datos</v-btn><v-btn color="primary" rounded="lg" class="text-none" :loading="busy" @click="saveClient(true)">Confirmar registro</v-btn></v-card-actions></v-card>
+    </v-dialog>
 
     <v-dialog v-model="staffDialog" max-width="520">
       <v-card class="dialog-card" rounded="xl"><v-card-title class="dialog-title"><span class="dialog-icon"><v-icon icon="mdi-account-plus" /></span><span>Invitar al equipo</span></v-card-title><v-card-subtitle>Crearemos la cuenta con el rol adecuado para su trabajo.</v-card-subtitle>

@@ -1,0 +1,30 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "UC-CV-01 Registrar Cliente",
+    "output": ".archify/workflow-uc-cv-01-20261007-115346/uc-cv-01.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "usecase", "label": "UC-CV-01" }
+  ],
+  "mainPath": ["open", "capture", "normalize", "match", "confirm", "persist", "audit"],
+  "nodes": [
+    { "id": "open", "lane": "usecase", "col": 0, "type": "frontend", "label": "Abrir alta" },
+    { "id": "capture", "lane": "usecase", "col": 1, "type": "frontend", "label": "Capturar" },
+    { "id": "normalize", "lane": "usecase", "col": 2, "type": "backend", "label": "Normalizar" },
+    { "id": "match", "lane": "usecase", "col": 3, "type": "backend", "label": "Buscar coincidencias", "width": 150 },
+    { "id": "confirm", "lane": "usecase", "col": 4, "type": "frontend", "label": "Confirmar" },
+    { "id": "persist", "lane": "usecase", "col": 5, "type": "database", "label": "Persistir", "yOffset": -70 },
+    { "id": "audit", "lane": "usecase", "col": 5, "type": "backend", "label": "Auditar", "yOffset": 80 }
+  ],
+  "edges": [
+    { "id": "open-capture", "from": "open", "to": "capture", "role": "main" },
+    { "id": "capture-normalize", "from": "capture", "to": "normalize", "role": "main" },
+    { "id": "normalize-match", "from": "normalize", "to": "match", "role": "main" },
+    { "id": "match-confirm", "from": "match", "to": "confirm", "role": "main" },
+    { "id": "confirm-persist", "from": "confirm", "to": "persist", "role": "main" },
+    { "id": "persist-audit", "from": "persist", "to": "audit", "role": "main" }
+  ]
+}
