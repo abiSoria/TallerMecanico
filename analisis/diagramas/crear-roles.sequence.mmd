@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor Admin as Administrador
+    participant UI as RoleManagementView
+    participant API as FastAPI
+    participant Auth as require_roles
+    participant DB as MySQL
+
+    Admin->>UI: Captura nombre y descripcion
+    UI->>API: POST /api/v1/admin/roles + Bearer
+    API->>Auth: Validar sesion, cuenta activa y rol
+    Auth-->>API: Administrador autorizado
+    API->>API: Validar, recortar y aplicar casefold
+    API->>DB: Consultar normalized_name
+    alt Nombre duplicado
+        DB-->>API: Coincidencia
+        API-->>UI: 409 DUPLICATE_ROLE
+    else Nombre disponible
+        DB-->>API: Sin coincidencia
+        API->>DB: BEGIN; insertar rol id_estatus=1
+        API->>DB: Insertar admin.role_created
+        API->>DB: COMMIT
+        API-->>UI: 201 rol activo
+        UI-->>Admin: Mostrar resultado
+    end
+    Note over API,DB: Una restriccion UNIQUE protege solicitudes concurrentes
+

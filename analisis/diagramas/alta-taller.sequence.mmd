@@ -1,0 +1,31 @@
+sequenceDiagram
+    actor Actor as Administrador o Recepcionista
+    participant UI as WorkshopCreateView
+    participant API as FastAPI
+    participant Auth as require_roles
+    participant Postal as postal_codes
+    participant DB as MySQL
+    participant FS as uploads/workshops
+
+    Actor->>UI: Captura CP y pulsa Enter o busca direccion
+    UI->>API: GET postal-codes/by-code o GET postal-codes/search + Bearer
+    API->>Auth: Verificar cuenta, rol y sesion
+    Auth-->>API: Autorizado
+    API->>Postal: Buscar coincidencias locales
+    Postal-->>UI: Colonias o codigos postales
+    UI-->>Actor: Completa direccion o solicita seleccion
+    Actor->>UI: Confirma direccion y envia formulario
+    UI->>API: POST /api/v1/workshops multipart + Bearer
+    API->>Auth: Validar Administrador o Recepcionista
+    API->>API: Validar campos, RFC, correo, direccion, firma y decoder de imagen
+    API->>DB: Consultar RFC y consistencia postal
+    alt RFC duplicado o entrada invalida
+        API-->>UI: 409 o 422; no insertar
+    else RFC disponible y entrada valida
+        API->>FS: Escribir temporal y mover a nombre UUID
+        API->>DB: BEGIN; insertar workshop Activo y auditoria
+        API->>DB: COMMIT
+        API-->>UI: 201 Taller registrado
+    end
+    Note over API,DB: Ante error capturado se revierte DB y se retira el archivo creado
+

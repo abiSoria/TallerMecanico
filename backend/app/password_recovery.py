@@ -72,7 +72,7 @@ def request_password_reset(
             },
         )
 
-    user = db.query(User).filter(User.email == str(payload.email).lower(), User.is_active.is_(True)).first()
+    user = db.query(User).filter(User.email == str(payload.email).lower(), User.id_estatus == 1).first()
     if user:
         reset_token = create_password_reset_token(user.id, user.password_hash)
         background_tasks.add_task(send_reset_email, user.email, reset_token)
@@ -91,7 +91,7 @@ def reset_password(db: Session, payload: ResetPasswordIn) -> None:
             "message": "El enlace ya no es válido. Solicita uno nuevo para recuperar tu contraseña.",
         })
 
-    user = db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
+    user = db.query(User).filter(User.id == user_id, User.id_estatus == 1).first()
     if not user or not hmac.compare_digest(token_fingerprint, password_reset_fingerprint(user.password_hash)):
         raise HTTPException(status_code=400, detail={
             "code": "RESET_LINK_INVALID",

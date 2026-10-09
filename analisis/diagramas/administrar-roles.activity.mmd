@@ -1,0 +1,23 @@
+flowchart TD
+    A([Administrador abre Administrar roles]) --> B{Sesion valida y rol activo}
+    B -- No --> E1[401]
+    B -- Si --> C{Es Administrador}
+    C -- No --> E2[403]
+    C -- Si --> L[Consultar roles INNER JOIN Estatus]
+    L --> O{Operacion}
+    O -- Consultar --> R([Mostrar roles y estados])
+    O -- Actualizar --> U[Verificar existencia; validar y normalizar nombre]
+    U --> D{Nombre duplicado}
+    D -- Si --> E3[409 DUPLICATE_ROLE]
+    D -- No --> UP[Actualizar nombre/descripcion; auditar; commit]
+    UP --> R
+    UP -. Error DB .-> E7[Rollback y 500]
+    O -- Suspender --> S{Existe y esta Activo}
+    S -- No existe --> E4[404 ROLE_NOT_FOUND]
+    S -- Suspendido --> E5[409 ALREADY_SUSPENDED]
+    S -- Activo --> G{Rol asignado o codigo administrador}
+    G -- Si --> E6[409 ROLE_IN_USE]
+    G -- No --> SOFT[Cambiar id_estatus a 2; auditar; commit]
+    SOFT --> R
+    SOFT -. Error DB .-> E8[Rollback y 500]
+

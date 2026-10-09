@@ -1,0 +1,15 @@
+flowchart TD
+    A([Inicio: Administrador abre Crear rol]) --> B{Sesion valida y cuenta/rol activos}
+    B -- No --> E1[Rechazar: 401]
+    B -- Si --> C{Codigo de rol administrador}
+    C -- No --> E2[Rechazar: 403]
+    C -- Si --> D[Capturar nombre y descripcion opcional]
+    D --> V[Validar longitud y caracteres; recortar espacios]
+    V --> N[Calcular normalized_name con casefold]
+    N --> X{Nombre normalizado disponible}
+    X -- No --> E3[Responder DUPLICATE_ROLE: 409]
+    X -- Si --> P[Insertar rol Activo y auditoria en transaccion]
+    P --> Z{Persistencia correcta}
+    Z -- No --> E4[Rollback; responder PERSISTENCE_ERROR 500]
+    Z -- Si --> R([Responder 201 y mostrar rol])
+

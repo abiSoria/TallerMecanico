@@ -50,3 +50,18 @@ h1, h2, h3, .v-card-title { font-family: 'Aptos Display', 'Segoe UI', sans-serif
 .registration-table th:nth-child(3), .registration-table td:nth-child(3) { width: 32%; }
 .registration-table tbody tr + tr td { border-top: 1px solid #eff3f0; }
 .registration-table tbody tr:hover { background: #f9fbfa; }
+
+.workshop-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: .45rem 0 1.5rem; }
+.workshop-list-heading h1 { margin: .25rem 0; color: #173f40; font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 950; }
+.workshop-list-heading p { margin: 0; color: #718685; }
+.workshop-list { display: grid; gap: 1rem; }
+.workshop-card { overflow: hidden; border: 1px solid #eddfcc; background: #fff0dc; }
+.workshop-card-main { display: flex; align-items: stretch; gap: clamp(1rem, 2.5vw, 1.6rem); padding: 1rem; }
+.workshop-photo { flex: 0 0 150px; width: 150px; min-height: 150px; max-height: 190px; align-self: center; border: 1px solid #e1e6df; border-radius: 8px; background: #fff; object-fit: cover; }
+.workshop-info { display: flex; min-width: 0; flex: 1; flex-direction: column; justify-content: center; gap: .7rem; padding: .35rem 0; color: #365754; }
+.workshop-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: .1rem; }
+.workshop-title-row h2 { margin: 0; color: #315653; font-size: 1.35rem; font-weight: 800; }
+.workshop-detail { display: flex; align-items: center; gap: .7rem; font-size: .96rem; line-height: 1.55; }
+.workshop-detail .v-icon { flex: 0 0 auto; color: #456b65; }
+.workshop-detail strong { margin-right: .5rem; font-weight: 750; }
+@media (max-width: 600px) { .workshop-card-main { flex-direction: column; }.workshop-photo { width: 100%; height: 190px; max-height: 220px; }.workshop-title-row h2 { font-size: 1.15rem; }.workshop-detail { align-items: flex-start; font-size: .87rem; }.workshop-list-heading { align-items: flex-start; } }

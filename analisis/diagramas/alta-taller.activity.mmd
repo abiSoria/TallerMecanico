@@ -1,0 +1,24 @@
+flowchart TD
+    A([Actor abre alta de taller]) --> B{Sesion y cuenta/rol activos}
+    B -- No --> X[Rechazar 401]
+    B -- Si --> C{Administrador o Recepcionista}
+    C -- No --> Y[Rechazar 403]
+    C -- Si --> D[Capturar datos y fotografia]
+    D --> P{Necesita resolver direccion}
+    P -- Si --> Q[Consultar catalogo SEPOMEX local por CP o direccion]
+    Q --> M{Coincidencias}
+    M -- Una --> U[Completar direccion; confirmar antes de reemplazar manual]
+    M -- Varias --> V[Solicitar seleccion de colonia o CP]
+    M -- Ninguna --> W[Permitir captura manual]
+    P -- No --> K[Enviar alta]
+    U --> K
+    V --> K
+    W --> K
+    K --> R[Validar obligatorios, correo, RFC, direccion y foto]
+    R --> F{RFC existente}
+    F -- Si --> Z[409 DUPLICATE_RFC]
+    F -- No --> T[Guardar imagen y transaccion taller + auditoria]
+    T --> E{Persistencia correcta}
+    E -- No --> P[Rollback DB; retirar archivo de esta solicitud]
+    E -- Si --> S([Taller Activo; responder 201])
+

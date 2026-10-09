@@ -12,18 +12,20 @@ from app.schemas import AuthOut, ChangePasswordIn, LoginIn, RegisterIn, StaffUse
 from app.security import create_access_token, hash_password, verify_password
 from app.client_registration import ClientOut, ClientRegistrationAuditOut, ClientRegistrationFacade, ClientRegistrationIn
 from app.password_recovery import ForgotPasswordIn, ResetPasswordIn, request_password_reset, reset_password
+from app.administration import router as administration_router
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Authorization", "Content-Type"])
+app.include_router(administration_router)
 client_registration = ClientRegistrationFacade()
 
 
 def user_output(user: User) -> UserOut:
-    return UserOut(id=user.id, full_name=user.full_name, email=user.email, role=user.role.name)
+    return UserOut(id=user.id, full_name=user.full_name, email=user.email, role=user.role.code, role_name=user.role.name)
 
 
 def auth_output(user: User) -> AuthOut:
-    return AuthOut(access_token=create_access_token(user.id, user.role.name), expires_in=settings.access_token_minutes * 60, user=user_output(user))
+    return AuthOut(access_token=create_access_token(user.id, user.role.code), expires_in=settings.access_token_minutes * 60, user=user_output(user))
 
 
 @app.get("/health")
@@ -70,7 +72,7 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo")
     # Los registros públicos siempre son clientes: nunca aceptamos el rol desde el cliente.
-    role = db.query(Role).filter(Role.name == "cliente").first()
+    role = db.query(Role).filter(Role.code == "cliente", Role.id_estatus == 1).first()
     if not role:
         raise HTTPException(status_code=500, detail="Falta configurar el rol cliente en la base de datos")
     user = User(role_id=role.id, full_name=payload.full_name, email=email, password_hash=hash_password(payload.password))
@@ -91,7 +93,7 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
 def login(payload: LoginIn, db: Session = Depends(get_db)):
     user = db.query(User).options(joinedload(User.role)).filter(User.email == str(payload.email).lower()).first()
     # Respuesta genérica evita revelar si el correo está registrado.
-    if not user or not user.is_active or not verify_password(payload.password, user.password_hash):
+    if not user or not user.is_active or user.role.id_estatus != 1 or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos", headers={"WWW-Authenticate": "Bearer"})
     db.add(AuditLog(user_id=user.id, action="auth.login", detail="Inicio de sesión correcto"))
     db.commit()
@@ -127,7 +129,7 @@ def change_password(payload: ChangePasswordIn, db: Session = Depends(get_db), us
 @app.get(f"{settings.api_prefix}/admin/users", response_model=list[UserOut])
 def list_staff_users(db: Session = Depends(get_db), admin: User = Depends(require_roles("administrador"))):
     users = db.query(User).options(joinedload(User.role)).filter(
-        User.role.has(Role.name != "cliente")
+        User.role.has(Role.code != "cliente")
     ).order_by(User.created_at.desc()).all()
     return [user_output(item) for item in users]
 
@@ -137,14 +139,16 @@ def create_staff_user(payload: StaffUserCreate, db: Session = Depends(get_db), a
     email = str(payload.email).lower()
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=409, detail="Ya existe una cuenta con ese correo")
-    role = db.query(Role).filter(Role.name == payload.role).first()
+    role = db.query(Role).filter(Role.id == payload.role_id, Role.id_estatus == 1).with_for_update().first()
     if not role:
-        raise HTTPException(status_code=422, detail="El rol todavía no está configurado en la base de datos")
-    user = User(role_id=role.id, full_name=payload.full_name, email=email, password_hash=hash_password(payload.password))
+        raise HTTPException(status_code=422, detail="El rol no existe o está suspendido")
+    if role.code in {"cliente", "sistema"}:
+        raise HTTPException(status_code=422, detail="Ese rol no puede asignarse a una cuenta del equipo")
+    user = User(role_id=role.id, full_name=payload.full_name, email=email, password_hash=hash_password(payload.password), id_estatus=1)
     try:
         db.add(user)
         db.flush()
-        db.add(AuditLog(user_id=admin.id, action="admin.user_created", detail=f"Cuenta {payload.role} creada para {email}"))
+        db.add(AuditLog(user_id=admin.id, action="admin.user_created", detail=f"Cuenta {role.code} creada para {email}"))
         db.commit()
     except IntegrityError:
         db.rollback()

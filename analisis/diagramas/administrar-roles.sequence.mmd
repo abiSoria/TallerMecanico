@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor Admin as Administrador
+    participant UI as RoleManagementView
+    participant API as FastAPI
+    participant Auth as require_roles
+    participant DB as MySQL
+
+    Admin->>UI: Abre Administrar roles
+    UI->>API: GET /api/v1/admin/roles + Bearer
+    API->>Auth: Verificar Administrador activo
+    Auth-->>API: Autorizado
+    API->>DB: SELECT roles INNER JOIN Estatus
+    DB-->>UI: Lista con valor y descripcion de estado
+    alt Actualizar
+        Admin->>UI: Edita nombre y descripcion
+        UI->>API: PUT /api/v1/admin/roles/{id}
+        API->>DB: Verificar existencia y unicidad normalizada
+        alt Conflicto o inexistente
+            API-->>UI: 404 o 409
+        else Valido
+            API->>DB: BEGIN; actualizar datos y auditoria
+            API->>DB: COMMIT
+            API-->>UI: 200 rol actualizado
+        end
+    else Suspender
+        Admin->>UI: Confirma suspension
+        UI->>API: DELETE /api/v1/admin/roles/{id}
+        API->>DB: Bloquear rol; revisar estado, asignaciones y proteccion admin
+        alt Ya suspendido, asignado o administrador
+            API-->>UI: 409 con motivo
+        else Elegible
+            API->>DB: BEGIN; id_estatus=2 y auditoria
+            API->>DB: COMMIT
+            API-->>UI: Confirmacion de baja logica
+        end
+    end
+

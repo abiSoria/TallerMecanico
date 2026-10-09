@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ApiError, api, type ClientRegistrationAudit, type ClientRegistrationData, type StaffUserData, type User } from '../api'
+import { ApiError, api, type ClientRegistrationAudit, type ClientRegistrationData, type RoleRecord, type StaffUserData, type User } from '../api'
 import { session } from '../session'
 import { emailRule, nameRule, passwordRule } from '../validation'
 
@@ -21,6 +21,7 @@ const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 const staff = ref<User[]>([])
+const activeRoles = ref<RoleRecord[]>([])
 const clientRegistrations = ref<ClientRegistrationAudit[]>([])
 const clientRegistrationsLoading = ref(false)
 const clientRegistrationsError = ref('')
@@ -28,13 +29,7 @@ const duplicateClientId = ref<number | undefined>()
 const emptyClient = (): ClientRegistrationData => ({ full_name: '', street: '', number: '', neighborhood: '', municipality: '', state: '', primary_phone: '', alternate_phone: '', email: '' })
 const newClient = ref<ClientRegistrationData>(emptyClient())
 const staffLoading = ref(false)
-const newStaff = ref({ full_name: '', email: '', password: '', role: 'recepcionista' as StaffUserData['role'] })
-const allowedStaffRoles: Array<{ title: string; value: StaffUserData['role'] }> = [
-  { title: 'Administrador', value: 'administrador' },
-  { title: 'Recepcionista', value: 'recepcionista' },
-  { title: 'Asesor de servicio', value: 'asesor_servicio' },
-  { title: 'Técnico', value: 'tecnico' },
-]
+const newStaff = ref({ full_name: '', email: '', password: '', role_id: 0 } as { full_name: string; email: string; password: string; role_id: StaffUserData['role_id'] })
 const roleNames: Record<string, string> = {
   administrador: 'Administrador', recepcionista: 'Recepcionista', asesor_servicio: 'Asesor de servicio',
   tecnico: 'Técnico', cliente: 'Cliente', sistema: 'Sistema',
@@ -117,7 +112,12 @@ const profiles: Record<string, { eyebrow: string; title: string; description: st
 async function loadStaff() {
   if (role.value !== 'administrador') return
   staffLoading.value = true
-  try { staff.value = await api.staffUsers(token) }
+  try {
+    const [users, roles] = await Promise.all([api.staffUsers(token), api.activeRoles(token)])
+    staff.value = users
+    activeRoles.value = roles.filter(item => !['cliente', 'sistema'].includes(item.code))
+    if (!activeRoles.value.some(item => item.id === newStaff.value.role_id)) newStaff.value.role_id = activeRoles.value.find(item => item.code === 'recepcionista')?.id ?? activeRoles.value[0]?.id ?? 0
+  }
   catch (err) { error.value = err instanceof Error ? err.message : 'No se pudo cargar el equipo.' }
   finally { staffLoading.value = false }
 }
@@ -139,9 +139,10 @@ async function createStaffAccount() {
   busy.value = true; error.value = ''; message.value = ''
   try {
     await api.createStaffUser(token, { ...newStaff.value, full_name: newStaff.value.full_name.trim(), email: newStaff.value.email.trim().toLowerCase() })
-    message.value = `Cuenta creada para ${newStaff.value.full_name}. Ya puede iniciar sesión con el perfil ${roleNames[newStaff.value.role]}.`
+    const assignedRole = activeRoles.value.find(item => item.id === newStaff.value.role_id)
+    message.value = `Cuenta creada para ${newStaff.value.full_name}. Perfil: ${assignedRole?.name ?? 'asignado'}.`
     staffDialog.value = false
-    newStaff.value = { full_name: '', email: '', password: '', role: 'recepcionista' }
+    newStaff.value = { full_name: '', email: '', password: '', role_id: activeRoles.value.find(item => item.code === 'recepcionista')?.id ?? activeRoles.value[0]?.id ?? 0 }
     await loadStaff()
   } catch (err) { error.value = err instanceof Error ? err.message : 'No se pudo crear la cuenta.' }
   finally { busy.value = false }
@@ -169,7 +170,7 @@ onMounted(() => { void loadStaff(); void loadClientRegistrations() })
     <v-app-bar class="garage-appbar" flat>
       <div class="brand-mini"><span class="brand-mini-icon"><v-icon icon="mdi-wrench-clock" /></span><span>pit<span class="brand-mini-dot">.</span>stop</span></div>
       <v-spacer />
-      <v-chip class="profile-chip mr-3" :color="roleColors[role]" variant="tonal" size="small"><v-icon start icon="mdi-account-circle-outline" />{{ roleNames[role] ?? role }}</v-chip>
+      <v-chip class="profile-chip mr-3" :color="roleColors[role] ?? 'grey'" variant="tonal" size="small"><v-icon start icon="mdi-account-circle-outline" />{{ roleNames[role] ?? session.user.value?.role_name ?? role }}</v-chip>
       <v-btn icon="mdi-lock-reset" aria-label="Cambiar contraseña" variant="text" @click="passwordDialog = true" />
       <v-btn icon="mdi-logout-variant" aria-label="Cerrar sesión" variant="text" class="mr-2" @click="logout" />
     </v-app-bar>
@@ -199,11 +200,11 @@ onMounted(() => { void loadStaff(); void loadClientRegistrations() })
 
         <div class="section-heading mt-9 mb-4">
           <div><div class="section-kicker">TU TABLERO</div><h2>¿Qué vamos a poner en marcha?</h2></div>
-          <v-btn v-if="role === 'administrador'" color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="staffDialog = true">Agregar al equipo</v-btn>
+          <div v-if="role === 'administrador'" class="d-flex flex-wrap ga-2"><v-btn color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="staffDialog = true">Agregar al equipo</v-btn><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-badge-account-horizontal-outline" class="text-none" @click="router.push('/admin/roles')">Administrar roles</v-btn></div>
         </div>
 
         <div v-if="role === 'administrador' || role === 'recepcionista'" class="d-flex justify-end mb-4">
-          <v-btn color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="openClientDialog">Registrar cliente</v-btn>
+          <div class="d-flex flex-wrap ga-2"><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-domain" class="text-none" @click="router.push('/talleres')">Ver talleres</v-btn><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-domain-plus" class="text-none" @click="router.push('/talleres/alta')">Dar de alta taller</v-btn><v-btn color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="openClientDialog">Registrar cliente</v-btn></div>
         </div>
 
         <v-row class="module-grid">
@@ -220,7 +221,7 @@ onMounted(() => { void loadStaff(); void loadClientRegistrations() })
           <div class="team-heading"><div><div class="section-kicker">TU PIT CREW</div><h2>Accesos del equipo</h2><p>Un perfil por persona, con permisos a la medida de su trabajo.</p></div><v-avatar color="secondary" size="52"><v-icon icon="mdi-account-group" color="teal-darken-3" /></v-avatar></div>
           <v-progress-linear v-if="staffLoading" indeterminate color="primary" />
           <div v-else-if="staff.length" class="team-list">
-            <div v-for="member in staff" :key="member.id" class="team-row"><v-avatar color="primary" variant="tonal" size="40"><span class="avatar-initial">{{ member.full_name.slice(0, 1).toUpperCase() }}</span></v-avatar><div class="team-member"><strong>{{ member.full_name }}</strong><span>{{ member.email }}</span></div><v-chip :color="roleColors[member.role]" variant="tonal" size="small">{{ roleNames[member.role] ?? member.role }}</v-chip></div>
+            <div v-for="member in staff" :key="member.id" class="team-row"><v-avatar color="primary" variant="tonal" size="40"><span class="avatar-initial">{{ member.full_name.slice(0, 1).toUpperCase() }}</span></v-avatar><div class="team-member"><strong>{{ member.full_name }}</strong><span>{{ member.email }}</span></div><v-chip :color="roleColors[member.role] ?? 'grey'" variant="tonal" size="small">{{ roleNames[member.role] ?? member.role_name }}</v-chip></div>
           </div>
           <div v-else class="empty-team"><v-icon icon="mdi-account-multiple-outline" size="32" /><p>Aún no hay cuentas internas. Invita a tu equipo para que cada quien entre con su propio perfil.</p><v-btn color="primary" variant="tonal" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="staffDialog = true">Crear primera cuenta</v-btn></div>
           <div class="team-footer"><v-icon icon="mdi-shield-check-outline" size="17" />El rol de sistema queda reservado para tareas automatizadas.</div>
@@ -276,7 +277,7 @@ onMounted(() => { void loadStaff(); void loadClientRegistrations() })
         <v-card-text class="pt-5"><v-form @submit.prevent="createStaffAccount">
           <v-text-field v-model="newStaff.full_name" label="Nombre completo" autocomplete="name" :rules="[v => !!v || 'Campo obligatorio', nameRule]" prepend-inner-icon="mdi-account-outline" required />
           <v-text-field v-model="newStaff.email" label="Correo de acceso" autocomplete="email" type="email" :rules="[v => !!v || 'Campo obligatorio', emailRule]" prepend-inner-icon="mdi-email-outline" required />
-          <v-select v-model="newStaff.role" label="Perfil del equipo" :items="allowedStaffRoles" item-title="title" item-value="value" prepend-inner-icon="mdi-badge-account-outline" />
+          <v-select v-model="newStaff.role_id" label="Perfil del equipo" :items="activeRoles" item-title="name" item-value="id" prepend-inner-icon="mdi-badge-account-outline" :rules="[v => v > 0 || 'Selecciona un rol activo.']" required />
           <v-text-field v-model="newStaff.password" label="Contraseña temporal" type="password" autocomplete="new-password" :rules="[staffPasswordRule]" hint="12+ caracteres, mayúscula, minúscula, número y símbolo." persistent-hint prepend-inner-icon="mdi-lock-outline" required />
           <v-alert v-if="error" type="error" variant="tonal" class="mt-4">{{ error }}</v-alert>
           <div class="dialog-actions mt-5"><v-btn variant="text" class="text-none" @click="closeStaffDialog">Cancelar</v-btn><v-btn color="primary" type="submit" rounded="lg" class="text-none" :loading="busy">Crear cuenta <v-icon end icon="mdi-arrow-right" /></v-btn></div>

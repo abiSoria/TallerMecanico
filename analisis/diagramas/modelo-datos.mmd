@@ -1,0 +1,61 @@
+erDiagram
+    ESTATUS ||--o{ ROLES : "id_estatus"
+    ESTATUS ||--o{ USERS : "id_estatus"
+    ESTATUS ||--o{ WORKSHOPS : "id_estatus"
+    ROLES ||--o{ USERS : "role_id"
+    USERS o|--o{ AUDIT_LOGS : "user_id"
+
+    ESTATUS {
+      int IdEstatus PK
+      string Valor UK
+      string Descripcion
+    }
+    ROLES {
+      int id PK
+      string code UK
+      string name UK
+      string normalized_name UK
+      string description nullable
+      int id_estatus FK
+    }
+    USERS {
+      int id PK
+      int role_id FK
+      int id_estatus FK
+      string full_name
+      string email UK
+      string password_hash
+    }
+    WORKSHOPS {
+      int id PK
+      string name
+      string rfc UK
+      string contact_email
+      string street
+      string number
+      string postal_code
+      string state
+      string municipality
+      string neighborhood
+      string photo_filename
+      int id_estatus FK
+      datetime created_at
+    }
+    AUDIT_LOGS {
+      int id PK
+      int user_id FK nullable
+      string action
+      string detail nullable
+      datetime created_at
+    }
+    POSTAL_CODES {
+      int id PK
+      string postal_code
+      string neighborhood
+      string municipality
+      string state
+    }
+
+    %% POSTAL_CODES se consulta por valores y no tiene FK desde WORKSHOPS.
+    %% AUDIT_LOGS.user_id conserva nulo si el usuario relacionado se elimina.
+

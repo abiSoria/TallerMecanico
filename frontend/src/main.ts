@@ -4,7 +4,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import {
   VAlert, VApp, VAppBar, VAvatar, VBtn, VCard, VCardSubtitle, VCardText,
   VCardTitle, VChip, VCol, VContainer, VDialog, VForm, VIcon, VMain,
-  VProgressLinear, VRow, VSelect, VSpacer, VTextField,
+  VFileInput, VProgressLinear, VRow, VSelect, VSpacer, VTextField, VTable, VToolbarTitle,
 } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { createVuetify } from 'vuetify'
@@ -17,7 +17,7 @@ const vuetify = createVuetify({
   components: {
     VAlert, VApp, VAppBar, VAvatar, VBtn, VCard, VCardSubtitle, VCardText,
     VCardTitle, VChip, VCol, VContainer, VDialog, VForm, VIcon, VMain,
-    VProgressLinear, VRow, VSelect, VSpacer, VTextField,
+    VFileInput, VProgressLinear, VRow, VSelect, VSpacer, VTextField, VTable, VToolbarTitle,
   },
   directives,
   theme: { defaultTheme: 'taller', themes: { taller: { dark: false, colors: {

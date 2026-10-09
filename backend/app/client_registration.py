@@ -82,7 +82,7 @@ class ClientBuilder:
             "municipality": data.municipality.strip(), "state": data.state.strip(),
             "primary_phone": data.primary_phone.strip(),
             "alternate_phone": data.alternate_phone.strip(),
-            "email": str(data.email).strip().lower(), "is_active": True,
+            "email": str(data.email).strip().lower(), "id_estatus": 1,
         }
 
     def build(self) -> Client:
@@ -96,7 +96,7 @@ class ClientRegistrationFacade:
         self.validation = validation or ContactFormatStrategy()
 
     def register(self, db: Session, actor: User, data: ClientRegistrationIn) -> tuple[Client, bool]:
-        if actor.role.name not in self._roles:
+        if actor.role.code not in self._roles:
             raise HTTPException(403, detail={"code": "UNAUTHORIZED", "message": "El rol no está autorizado para registrar clientes."})
 
         self.validation.validate(data)
