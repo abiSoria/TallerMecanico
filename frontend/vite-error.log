@@ -1,0 +1,126 @@
+11:50:50 p.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+11:51:23 p.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+11:51:53 p.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:27:44 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:28:33 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:28:43 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:34:09 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:37:18 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:37:18 a.m. [vite] (client) Pre-transform error: Failed to resolve import "./views/VehicleListView.vue" from "src/router.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/TallerMecanico/frontend/src/router.ts:10:28
+  8  |  import WorkshopListView from "./views/WorkshopListView.vue";
+  9  |  import ClientManagementView from "./views/ClientManagementView.vue";
+  10 |  import VehicleListView from "./views/VehicleListView.vue";
+     |                               ^
+  11 |  const router = createRouter({
+  12 |  	history: createWebHistory(),
+12:37:18 a.m. [vite] Internal server error: Failed to resolve import "./views/VehicleListView.vue" from "src/router.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/TallerMecanico/frontend/src/router.ts:10:28
+  8  |  import WorkshopListView from "./views/WorkshopListView.vue";
+  9  |  import ClientManagementView from "./views/ClientManagementView.vue";
+  10 |  import VehicleListView from "./views/VehicleListView.vue";
+     |                               ^
+  11 |  const router = createRouter({
+  12 |  	history: createWebHistory(),
+      at TransformPluginContext._formatLog (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:8766:39)
+      at TransformPluginContext.error (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:8763:14)
+      at normalizeUrl (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:26423:18)
+      at async file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:26493:30
+      at async Promise.all (index 9)
+      at async TransformPluginContext.transform (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:26459:4)
+      at async EnvironmentPluginContainer.transform (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:8545:14)
+      at async loadAndTransform (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:19988:26)
+      at async viteTransformMiddleware (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:20207:20)
+12:37:25 a.m. [vite] (client) Pre-transform error: Failed to resolve import "./views/VehicleListView.vue" from "src/router.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/TallerMecanico/frontend/src/router.ts:10:28
+  8  |  import WorkshopListView from "./views/WorkshopListView.vue";
+  9  |  import ClientManagementView from "./views/ClientManagementView.vue";
+  10 |  import VehicleListView from "./views/VehicleListView.vue";
+     |                               ^
+  11 |  const router = createRouter({
+  12 |  	history: createWebHistory(),
+12:37:25 a.m. [vite] Internal server error: Failed to resolve import "./views/VehicleListView.vue" from "src/router.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/TallerMecanico/frontend/src/router.ts:10:28
+  8  |  import WorkshopListView from "./views/WorkshopListView.vue";
+  9  |  import ClientManagementView from "./views/ClientManagementView.vue";
+  10 |  import VehicleListView from "./views/VehicleListView.vue";
+     |                               ^
+  11 |  const router = createRouter({
+  12 |  	history: createWebHistory(),
+      at TransformPluginContext._formatLog (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:8766:39)
+      at TransformPluginContext.error (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:8763:14)
+      at normalizeUrl (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:26423:18)
+      at async file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:26493:30
+      at async Promise.all (index 9)
+      at async TransformPluginContext.transform (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:26459:4)
+      at async EnvironmentPluginContainer.transform (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:8545:14)
+      at async loadAndTransform (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:19988:26)
+      at async viteTransformMiddleware (file:///C:/TallerMecanico/frontend/node_modules/vite/dist/node/chunks/node.js:20207:20)
+12:37:44 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:37:51 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:38:18 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:48:27 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>

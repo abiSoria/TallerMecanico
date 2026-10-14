@@ -38,15 +38,6 @@ CREATE TABLE IF NOT EXISTS users (
   INDEX idx_users_email (email)
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS clients (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  full_name TEXT NOT NULL, street TEXT NOT NULL, number TEXT NOT NULL,
-  neighborhood TEXT NOT NULL, municipality TEXT NOT NULL, state TEXT NOT NULL,
-  primary_phone TEXT NOT NULL, alternate_phone TEXT NOT NULL, email TEXT NOT NULL,
-  id_estatus INT NOT NULL DEFAULT 1,
-  CONSTRAINT fk_clients_estatus FOREIGN KEY (id_estatus) REFERENCES Estatus(IdEstatus)
-) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS workshops (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(160) NOT NULL,
@@ -64,6 +55,18 @@ CREATE TABLE IF NOT EXISTS workshops (
   CONSTRAINT fk_workshops_estatus FOREIGN KEY (id_estatus) REFERENCES Estatus(IdEstatus)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS clients (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  workshop_id INT NULL,
+  full_name TEXT NOT NULL, street TEXT NOT NULL, number TEXT NOT NULL,
+  neighborhood TEXT NOT NULL, municipality TEXT NOT NULL, state TEXT NOT NULL,
+  primary_phone TEXT NOT NULL, alternate_phone TEXT NOT NULL, email TEXT NOT NULL,
+  id_estatus INT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_clients_estatus FOREIGN KEY (id_estatus) REFERENCES Estatus(IdEstatus),
+  CONSTRAINT fk_clients_workshop FOREIGN KEY (workshop_id) REFERENCES workshops(id),
+  INDEX idx_clients_workshop (workshop_id)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS postal_codes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   postal_code CHAR(5) NOT NULL,
@@ -77,9 +80,12 @@ CREATE TABLE IF NOT EXISTS postal_codes (
 
 CREATE TABLE IF NOT EXISTS vehicles (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  client_id INT NOT NULL, plate VARCHAR(12) NOT NULL UNIQUE,
+  client_id INT NOT NULL, vin VARCHAR(32) NULL UNIQUE, plate VARCHAR(12) NOT NULL UNIQUE,
   make VARCHAR(60) NOT NULL, model VARCHAR(60) NOT NULL, year SMALLINT,
-  CONSTRAINT fk_vehicles_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+  version VARCHAR(80), color VARCHAR(40), mileage INT,
+  photo_filename VARCHAR(80), id_estatus INT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_vehicles_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+  CONSTRAINT fk_vehicles_estatus FOREIGN KEY (id_estatus) REFERENCES Estatus(IdEstatus)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS repair_orders (

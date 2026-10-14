@@ -1,0 +1,15 @@
+flowchart TD
+  start([Inicio]) --> access{¿Sesión válida y rol autorizado?}
+  access -- No --> denied[Rechazar 401 o 403]
+  access -- Sí --> open[Abrir Administración de clientes]
+  open --> selectClient[Elegir cliente activo]
+  selectClient --> load[Consultar talleres y mostrar solo activos]
+  load --> choose[Seleccionar taller activo]
+  choose --> submit[Enviar asociación]
+  submit --> recheck{¿Cliente y taller existen y están activos?}
+  recheck -- No --> reject[Informar error y conservar asociación previa]
+  recheck -- Sí --> save[Asignar clients.workshop_id y confirmar]
+  save --> success[Mostrar éxito y actualizar lista]
+  denied --> end([Fin])
+  reject --> end
+  success --> end

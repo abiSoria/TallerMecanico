@@ -1,0 +1,35 @@
+flowchart TD
+  start([Inicio]) --> access{¿Sesión válida y rol autorizado?}
+  access -- No --> denied[Rechazar: 401 o 403]
+  access -- Sí --> choose[Elegir Asociar vehículo en un cliente activo]
+  choose --> selected{¿Cliente existe y está activo?}
+  selected -- No --> clientError[Informar que el cliente no está disponible]
+  selected -- Sí --> capture[Capturar VIN, placa, marca, modelo, año, versión, color y kilometraje]
+  capture --> normalize[Recortar identificadores y normalizar texto descriptivo]
+  normalize --> validate{¿Campos y formatos válidos?}
+  validate -- No --> invalid[Mostrar errores de validación]
+  validate -- Sí --> photo{¿Se adjuntó fotografía?}
+  photo -- Sí --> photoCheck[Validar extensión, MIME, contenido real y máximo 10 MiB]
+  photoCheck --> photoValid{¿Imagen válida?}
+  photoValid -- No --> photoError[Informar error de fotografía; no guardar]
+  photoValid -- Sí --> serverClient{¿Cliente existe y sigue activo?}
+  photo -- No --> serverClient
+  serverClient -- No --> clientError
+  serverClient -- Sí --> duplicate{¿VIN o placa duplicados?}
+  duplicate -- Sí --> duplicateError[Informar duplicidad; no guardar]
+  duplicate -- No --> build[Preparar vehículo con estatus Activo y cliente seleccionado]
+  build --> save[Insertar fila pendiente y ejecutar flush]
+  save --> photoWrite{¿Hay fotografía?}
+  photoWrite -- Sí --> store[Escribir foto con nombre UUID]
+  photoWrite -- No --> commit
+  store --> commit[Confirmar transacción en base de datos]
+  commit --> committed{¿Persistencia confirmada?}
+  committed -- No --> rollback[Revertir transacción y retirar foto temporal]
+  committed -- Sí --> result[Mostrar éxito; cerrar formulario y actualizar vista]
+  denied --> finish([Fin])
+  clientError --> finish
+  invalid --> capture
+  duplicateError --> capture
+  photoError --> finish
+  rollback --> finish
+  result --> finish

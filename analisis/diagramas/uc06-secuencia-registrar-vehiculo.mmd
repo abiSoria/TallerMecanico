@@ -1,0 +1,46 @@
+sequenceDiagram
+  actor Usuario as Administrador o Recepcionista
+  participant Vue as ClientManagementView.vue
+  participant API as FastAPI / main.py
+  participant Auth as require_roles / current_user
+  participant Servicio as vehicle_registration.py
+  participant DB as MySQL
+  participant FS as uploads/vehicles
+
+  Usuario->>Vue: Elegir cliente activo y Asociar vehículo
+  Vue->>Vue: Validar formulario y fotografía en navegador
+  Usuario->>Vue: Enviar datos y archivo opcional
+  Vue->>API: POST /api/v1/clients/{client_id}/vehicles (multipart)
+  API->>Auth: Validar autenticación y rol
+  alt Sesión o rol no autorizado
+    Auth-->>Vue: 401 / 403; no registrar
+  else Administrador o Recepcionista
+    API->>Servicio: Validar, normalizar y registrar
+    Servicio->>Servicio: Validar campos, VIN/placa y contenido de imagen
+    Servicio->>DB: Buscar cliente seleccionado y bloquear registro
+    DB-->>Servicio: Cliente existente y estatus
+    alt Cliente inexistente o inactivo
+      Servicio-->>Vue: 404 / 409; no registrar
+    else Cliente activo
+      Servicio->>DB: Buscar coincidencia por VIN o placa
+      alt Duplicado
+        Servicio-->>Vue: 409 DUPLICATE_VEHICLE
+      else Sin duplicado
+        Servicio->>DB: Insertar fila pendiente con client_id y estatus 1 (flush)
+        opt Fotografía adjunta
+          Servicio->>FS: Escribir archivo temporal y mover con nombre UUID
+        end
+        Servicio->>DB: Commit de la transacción
+        alt Error al guardar
+          Servicio->>DB: Rollback
+          Servicio->>FS: Retirar fotografía no confirmada
+          Servicio-->>Vue: 500 PERSISTENCE_ERROR
+        else Commit
+          DB-->>Servicio: Registro confirmado
+          Servicio-->>API: Vehículo persistido
+          API-->>Vue: 201 VehicleOut
+          Vue-->>Usuario: Mensaje de éxito y cerrar modal
+        end
+      end
+    end
+  end

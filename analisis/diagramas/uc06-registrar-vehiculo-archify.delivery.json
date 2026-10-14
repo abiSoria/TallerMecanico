@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c1efb537-7fdb-4c61-8b57-b2b1546b0abc",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\TallerMecanico\\analisis\\diagramas\\uc06-registrar-vehiculo.workflow.json",
+  "output": "C:\\TallerMecanico\\analisis\\diagramas\\uc06-registrar-vehiculo-archify.html",
+  "specification": {
+    "sha256": "1a445b5dfef6a8831a7e561f7516bbe648fd640bdf526b3ccd41cd6668398305",
+    "bytes": 34949
+  },
+  "artifact": {
+    "sha256": "c9d1b51fb2dfd36485d16be9618337dfd1ab0980b165e2b5a246974489eff2e8",
+    "bytes": 767104
+  }
+}

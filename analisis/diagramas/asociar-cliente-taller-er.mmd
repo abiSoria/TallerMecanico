@@ -1,0 +1,19 @@
+erDiagram
+  ESTATUS ||--o{ CLIENTE : clasifica
+  ESTATUS ||--o{ TALLER : clasifica
+  TALLER o|--o{ CLIENTE : "se asocia mediante clients.workshop_id"
+
+  CLIENTE {
+    int id PK
+    int workshop_id FK "nullable"
+    int id_estatus FK
+  }
+  TALLER {
+    int id PK
+    int id_estatus FK
+  }
+  ESTATUS {
+    int IdEstatus PK
+    string Valor
+    string Descripcion
+  }

@@ -65,3 +65,20 @@ h1, h2, h3, .v-card-title { font-family: 'Aptos Display', 'Segoe UI', sans-serif
 .workshop-detail .v-icon { flex: 0 0 auto; color: #456b65; }
 .workshop-detail strong { margin-right: .5rem; font-weight: 750; }
 @media (max-width: 600px) { .workshop-card-main { flex-direction: column; }.workshop-photo { width: 100%; height: 190px; max-height: 220px; }.workshop-title-row h2 { font-size: 1.15rem; }.workshop-detail { align-items: flex-start; font-size: .87rem; }.workshop-list-heading { align-items: flex-start; } }
+.client-admin-card { border: 1px solid #e7eeea; background: white; }
+.client-table-scroll { width: 100%; overflow-x: auto; border-radius: 16px; }
+.client-admin-table { width: 100%; min-width: 900px; border-collapse: collapse; text-align: left; }
+.client-admin-table th, .client-admin-table td { padding: .85rem 1rem; vertical-align: middle; border-bottom: 1px solid #edf2ef; }
+.client-admin-table th { background: #f5f8f6; color: #5d766f; font-size: .72rem; font-weight: 900; letter-spacing: .04em; }
+.client-admin-table td { color: #234d4b; font-size: .86rem; }
+.client-admin-table tbody tr:last-child td { border-bottom: 0; }
+.client-address { display: block; margin-top: .25rem; color: #82928b; font-size: .76rem; }
+.client-empty { padding: 2.5rem !important; color: #7b938c !important; text-align: center; }
+.vehicle-list { display: grid; gap: 1rem; }
+.vehicle-card { overflow: hidden; border: 1px solid #d9ede6; background: #fff; }
+.vehicle-card-main { display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 1.6rem); padding: 1rem; }
+.vehicle-photo { flex: 0 0 190px; width: 190px; height: 150px; border: 1px solid #e1e6df; border-radius: 12px; background: #f5f8f6; object-fit: cover; }
+.vehicle-photo-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; color: #82928b; font-size: .75rem; }
+.vehicle-info { display: flex; min-width: 0; flex: 1; flex-direction: column; justify-content: center; gap: .6rem; padding: .35rem 0; color: #365754; }
+.vehicle-info h2 { margin: 0; color: #315653; font-size: 1.25rem; font-weight: 850; }
+@media (max-width: 600px) { .vehicle-card-main { align-items: stretch; flex-direction: column; }.vehicle-photo { width: 100%; height: 205px; flex-basis: auto; }.vehicle-info h2 { font-size: 1.1rem; } }

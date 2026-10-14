@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     access_token_minutes: int = 30
     cors_origins: str = "http://localhost:5173"
     frontend_url: str = "http://127.0.0.1:5173"
+    vehicle_vin_pattern: str = r"^[A-Z0-9-]{5,32}$"
+    vehicle_plate_pattern: str = r"^[A-Z0-9-]{2,12}$"
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_username: str | None = None

@@ -6,6 +6,8 @@ import PasswordRecoveryView from './views/PasswordRecoveryView.vue'
 import RoleManagementView from './views/RoleManagementView.vue'
 import WorkshopCreateView from './views/WorkshopCreateView.vue'
 import WorkshopListView from './views/WorkshopListView.vue'
+import ClientManagementView from './views/ClientManagementView.vue'
+import VehicleListView from './views/VehicleListView.vue'
 
 const router = createRouter({ history: createWebHistory(), scrollBehavior: () => ({ top: 0 }), routes: [
   { path: '/', redirect: '/ingresar' },
@@ -16,6 +18,8 @@ const router = createRouter({ history: createWebHistory(), scrollBehavior: () =>
   { path: '/admin/roles', component: RoleManagementView, meta: { requiresAuth: true, roles: ['administrador'] } },
   { path: '/talleres/alta', component: WorkshopCreateView, meta: { requiresAuth: true, roles: ['administrador', 'recepcionista'] } },
   { path: '/talleres', component: WorkshopListView, meta: { requiresAuth: true, roles: ['administrador', 'recepcionista'] } },
+  { path: '/clientes', component: ClientManagementView, meta: { requiresAuth: true, roles: ['administrador', 'recepcionista'] } },
+  { path: '/vehiculos', component: VehicleListView, meta: { requiresAuth: true, roles: ['administrador', 'recepcionista'] } },
   { path: '/:pathMatch(.*)*', redirect: '/ingresar' },
 ] })
 

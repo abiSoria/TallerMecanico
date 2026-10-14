@@ -1,0 +1,27 @@
+erDiagram
+  CLIENTE ||--o{ VEHICULO : "tiene asociado"
+  ESTATUS ||--o{ VEHICULO : "clasifica"
+
+  CLIENTE {
+    int id PK
+    int id_estatus FK
+  }
+  VEHICULO {
+    int id PK
+    int client_id FK "NOT NULL"
+    string vin UK "único; acepta NULL en registros anteriores"
+    string plate UK
+    string make
+    string model
+    int year
+    string version
+    string color
+    int mileage
+    string photo_filename
+    int id_estatus FK "1 activo"
+  }
+  ESTATUS {
+    int IdEstatus PK
+    string Valor
+    string Descripcion
+  }

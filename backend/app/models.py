@@ -43,6 +43,7 @@ class User(Base):
 class Client(Base):
     __tablename__ = "clients"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    workshop_id: Mapped[int | None] = mapped_column(ForeignKey("workshops.id"), nullable=True, index=True)
     full_name: Mapped[str] = mapped_column(Text, nullable=False)
     street: Mapped[str] = mapped_column(Text, nullable=False)
     number: Mapped[str] = mapped_column(Text, nullable=False)
@@ -53,6 +54,7 @@ class Client(Base):
     alternate_phone: Mapped[str] = mapped_column(Text, nullable=False)
     email: Mapped[str] = mapped_column(Text, nullable=False)
     id_estatus: Mapped[int] = mapped_column(ForeignKey("Estatus.IdEstatus"), default=1, nullable=False)
+    workshop: Mapped["Workshop | None"] = relationship(back_populates="clients")
     vehicles: Mapped[list["Vehicle"]] = relationship(back_populates="client")
 
     @property
@@ -75,6 +77,7 @@ class Workshop(Base):
     photo_filename: Mapped[str] = mapped_column(String(80), nullable=False)
     id_estatus: Mapped[int] = mapped_column(ForeignKey("Estatus.IdEstatus"), default=1, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    clients: Mapped[list[Client]] = relationship(back_populates="workshop")
 
 
 class PostalCode(Base):
@@ -95,12 +98,23 @@ class Vehicle(Base):
     __tablename__ = "vehicles"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
+    vin: Mapped[str | None] = mapped_column(String(32), nullable=True)
     plate: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
     make: Mapped[str] = mapped_column(String(60), nullable=False)
     model: Mapped[str] = mapped_column(String(60), nullable=False)
     year: Mapped[int | None] = mapped_column(Integer)
+    version: Mapped[str | None] = mapped_column(String(80))
+    color: Mapped[str | None] = mapped_column(String(40))
+    mileage: Mapped[int | None] = mapped_column(Integer)
+    photo_filename: Mapped[str | None] = mapped_column(String(80))
+    id_estatus: Mapped[int] = mapped_column(ForeignKey("Estatus.IdEstatus"), default=1, nullable=False)
+    __table_args__ = (UniqueConstraint("vin", name="uq_vehicles_vin"),)
     client: Mapped[Client] = relationship(back_populates="vehicles")
     orders: Mapped[list["RepairOrder"]] = relationship(back_populates="vehicle")
+
+    @property
+    def is_active(self) -> bool:
+        return self.id_estatus == 1
 
 
 class RepairOrder(Base):

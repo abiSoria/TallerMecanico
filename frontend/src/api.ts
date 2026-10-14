@@ -13,7 +13,11 @@ export interface WorkshopRecord {
 export interface ClientRegistrationData {
   full_name: string; street: string; number: string; neighborhood: string; municipality: string; state: string
   primary_phone: string; alternate_phone: string; email: string
+  workshop_id?: number | null
 }
+export type ClientEditableData = Omit<ClientRegistrationData, 'workshop_id'>
+export interface ClientRecord extends ClientEditableData { id: number; is_active: boolean; workshop_id: number | null; workshop_name: string | null }
+export interface VehicleRecord { id: number; client_id: number; client_name: string; vin: string | null; plate: string; make: string; model: string; year: number | null; version: string | null; color: string | null; mileage: number | null; photo_filename: string | null; id_estatus: number; is_active: boolean; status: string }
 export interface ClientRegistrationAudit { client_name: string; registered_by: string; registered_at: string }
 export class ApiError extends Error {
   constructor(message: string, readonly code?: string, readonly possibleClientId?: number) { super(message) }
@@ -63,6 +67,19 @@ export const api = {
   postalReverse: (token: string, state: string, municipality: string, neighborhood: string) => request<PostalEntry[]>(`/postal-codes/search?${new URLSearchParams({ state, municipality, neighborhood })}`, {}, token),
   createWorkshop: (token: string, data: FormData) => request<{ id: number; name: string; rfc: string; message: string }>('/workshops', { method: 'POST', body: data }, token),
   workshops: (token: string) => request<WorkshopRecord[]>('/workshops', {}, token),
+  clients: (token: string) => request<ClientRecord[]>('/clients', {}, token),
+  updateClient: (token: string, id: number, data: ClientEditableData) => request<ClientRecord>(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token),
+  associateClientWorkshop: (token: string, id: number, workshop_id: number) => request<ClientRecord>(`/clients/${id}/workshop`, { method: 'PUT', body: JSON.stringify({ workshop_id }) }, token),
+  deactivateClient: (token: string, id: number) => request<{ message: string }>(`/clients/${id}`, { method: 'DELETE' }, token),
+  registerVehicle: (token: string, clientId: number, data: FormData) => request<VehicleRecord>(`/clients/${clientId}/vehicles`, { method: 'POST', body: data }, token),
+  vehicles: (token: string) => request<VehicleRecord[]>('/vehicles', {}, token),
+  vehiclePhoto: async (token: string, id: number) => {
+    let response: Response
+    try { response = await fetch(`${API}/vehicles/${id}/photo`, { headers: { Authorization: `Bearer ${token}` } }) }
+    catch { throw new ApiError('No pudimos conectarnos con el servidor. Comprueba tu conexión e inténtalo de nuevo.') }
+    if (!response.ok) throw new ApiError('No se pudo cargar la fotografía del vehículo.')
+    return URL.createObjectURL(await response.blob())
+  },
   workshopPhoto: async (token: string, id: number) => {
     let response: Response
     try { response = await fetch(`${API}/workshops/${id}/photo`, { headers: { Authorization: `Bearer ${token}` } }) }

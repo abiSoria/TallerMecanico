@@ -1,0 +1,14 @@
+flowchart LR
+  admin[Administrador]
+  recep[Recepcionista]
+  usecase((Registrar vehículo))
+  client((Seleccionar cliente activo))
+  validate((Validar datos, permisos y duplicidad))
+  photo((Adjuntar fotografía opcional))
+  persist((Guardar vehículo activo asociado))
+  admin --> usecase
+  recep --> usecase
+  usecase --> client
+  usecase --> validate
+  usecase --> photo
+  usecase --> persist

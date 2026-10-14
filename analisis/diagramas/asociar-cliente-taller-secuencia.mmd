@@ -1,0 +1,35 @@
+sequenceDiagram
+  actor Usuario as Administrador o Recepcionista
+  participant Vue as ClientManagementView.vue
+  participant API as FastAPI main.py
+  participant Auth as current_user / require_roles
+  participant DB as MySQL
+
+  Usuario->>Vue: Abrir fila de cliente activo
+  Vue->>API: GET /api/v1/workshops
+  API->>Auth: Validar sesión y rol
+  Auth-->>Vue: Talleres visibles para el usuario
+  Vue->>Vue: Filtrar id_estatus = 1 y mostrar selector
+  Usuario->>Vue: Seleccionar taller y pulsar Asociar
+  Vue->>API: PUT /api/v1/clients/{client_id}/workshop
+  API->>Auth: Validar sesión y rol nuevamente
+  alt Sin permiso
+    Auth-->>Vue: 401 / 403; no modificar relación
+  else Administrador o Recepcionista
+    API->>DB: Bloquear y consultar cliente seleccionado
+    DB-->>API: Cliente y estatus
+    alt Cliente inexistente o inactivo
+      API-->>Vue: 404 / 409; conservar relación
+    else Cliente activo
+      API->>DB: Bloquear y consultar taller seleccionado
+      DB-->>API: Taller y estatus
+      alt Taller inexistente o suspendido
+        API-->>Vue: 404 / 409; conservar relación
+      else Taller activo
+        API->>DB: Asignar clients.workshop_id y COMMIT
+        DB-->>API: Asociación confirmada
+        API-->>Vue: 200 con taller asociado
+        Vue-->>Usuario: Mostrar éxito y recargar clientes
+      end
+    end
+  end

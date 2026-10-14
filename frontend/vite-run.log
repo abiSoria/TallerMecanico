@@ -1,0 +1,17 @@
+
+> taller-mecanico-frontend@1.0.0 dev
+> vite --host 127.0.0.1
+
+
+  VITE v8.3.2  ready in 378 ms
+
+  ➜  Local:   http://127.0.0.1:5173/
+  ➜  press h + enter to show help
+12:18:45 a.m. [vite] (client) hmr update /src/views/RoleManagementView.vue, /src/views/WorkshopListView.vue, /src/views/DashboardView.vue, /src/views/ClientManagementView.vue, /src/views/AuthView.vue, /src/views/WorkshopCreateView.vue, /src/views/PasswordRecoveryView.vue
+12:18:59 a.m. [vite] (client) hmr update /src/views/ClientManagementView.vue
+12:24:51 a.m. [vite] (client) hmr update /src/views/ClientManagementView.vue
+12:37:18 a.m. [vite] (client) hmr update /src/views/RoleManagementView.vue, /src/views/WorkshopListView.vue, /src/views/DashboardView.vue, /src/views/ClientManagementView.vue, /src/views/AuthView.vue, /src/views/WorkshopCreateView.vue, /src/views/PasswordRecoveryView.vue
+12:37:18 a.m. [vite] (client) page reload src/router.ts
+12:37:25 a.m. [vite] (client) hmr update /src/views/DashboardView.vue
+12:37:37 a.m. [vite] (client) page reload src/views/VehicleListView.vue
+12:37:37 a.m. [vite] (client) hmr update /src/style.css

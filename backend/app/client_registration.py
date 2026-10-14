@@ -4,15 +4,15 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from app.models import AuditLog, Client, User
+from app.models import AuditLog, Client, User, Workshop
 
 
-class ClientRegistrationIn(BaseModel):
+class ClientFieldsIn(BaseModel):
     full_name: str
     street: str
     number: str
@@ -22,7 +22,19 @@ class ClientRegistrationIn(BaseModel):
     primary_phone: str
     alternate_phone: str
     email: EmailStr
+
+
+class ClientRegistrationIn(ClientFieldsIn):
+    workshop_id: int | None = Field(default=None, gt=0)
     confirm_duplicate: bool = False
+
+
+class ClientUpdateIn(ClientFieldsIn):
+    pass
+
+
+class ClientWorkshopIn(BaseModel):
+    workshop_id: int = Field(gt=0)
 
 
 class ClientOut(BaseModel):
@@ -40,6 +52,11 @@ class ClientOut(BaseModel):
     is_active: bool
 
 
+class ClientAdminOut(ClientOut):
+    workshop_id: int | None
+    workshop_name: str | None
+
+
 class ClientRegistrationAuditOut(BaseModel):
     client_name: str
     registered_by: str
@@ -48,13 +65,13 @@ class ClientRegistrationAuditOut(BaseModel):
 
 class ClientValidationStrategy(ABC):
     @abstractmethod
-    def validate(self, client: ClientRegistrationIn) -> None: ...
+    def validate(self, client: ClientFieldsIn) -> None: ...
 
 
 class ContactFormatStrategy(ClientValidationStrategy):
     _phone = re.compile(r"^(?=(?:\D*\d){7,})[+0-9() -]{7,20}$")
 
-    def validate(self, client: ClientRegistrationIn) -> None:
+    def validate(self, client: ClientFieldsIn) -> None:
         required = (client.full_name, client.street, client.number, client.neighborhood,
                     client.municipality, client.state, client.primary_phone,
                     client.alternate_phone, str(client.email))
@@ -72,10 +89,11 @@ class ClientBuilder:
 
     def from_input(self, data: ClientRegistrationIn) -> "ClientBuilder":
         self._values = self.normalize(data)
+        self._values["workshop_id"] = data.workshop_id
         return self
 
     @staticmethod
-    def normalize(data: ClientRegistrationIn) -> dict:
+    def normalize(data: ClientFieldsIn) -> dict:
         return {
             "full_name": data.full_name.strip(), "street": data.street.strip(),
             "number": data.number.strip(), "neighborhood": data.neighborhood.strip(),
@@ -102,6 +120,10 @@ class ClientRegistrationFacade:
         self.validation.validate(data)
         normalized = ClientBuilder.normalize(data)
         try:
+            if data.workshop_id is not None and not db.query(Workshop.id).filter(
+                Workshop.id == data.workshop_id, Workshop.id_estatus == 1
+            ).first():
+                raise HTTPException(422, detail={"code": "WORKSHOP_NOT_ACTIVE", "message": "Selecciona un taller activo."})
             possible = db.query(Client).filter(
                 or_(
                     Client.email == normalized["email"],

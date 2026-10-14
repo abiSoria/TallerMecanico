@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ApiError, api, type ClientRegistrationAudit, type ClientRegistrationData, type RoleRecord, type StaffUserData, type User } from '../api'
+import { ApiError, api, type ClientRegistrationAudit, type ClientRegistrationData, type RoleRecord, type StaffUserData, type User, type WorkshopRecord } from '../api'
 import { session } from '../session'
 import { emailRule, nameRule, passwordRule } from '../validation'
 
@@ -25,8 +25,10 @@ const activeRoles = ref<RoleRecord[]>([])
 const clientRegistrations = ref<ClientRegistrationAudit[]>([])
 const clientRegistrationsLoading = ref(false)
 const clientRegistrationsError = ref('')
+const activeWorkshops = ref<WorkshopRecord[]>([])
+const workshopsLoading = ref(false)
 const duplicateClientId = ref<number | undefined>()
-const emptyClient = (): ClientRegistrationData => ({ full_name: '', street: '', number: '', neighborhood: '', municipality: '', state: '', primary_phone: '', alternate_phone: '', email: '' })
+const emptyClient = (): ClientRegistrationData => ({ full_name: '', street: '', number: '', neighborhood: '', municipality: '', state: '', primary_phone: '', alternate_phone: '', email: '', workshop_id: null })
 const newClient = ref<ClientRegistrationData>(emptyClient())
 const staffLoading = ref(false)
 const newStaff = ref({ full_name: '', email: '', password: '', role_id: 0 } as { full_name: string; email: string; password: string; role_id: StaffUserData['role_id'] })
@@ -131,6 +133,14 @@ async function loadClientRegistrations() {
   finally { clientRegistrationsLoading.value = false }
 }
 
+async function loadActiveWorkshops() {
+  if (role.value !== 'administrador' && role.value !== 'recepcionista') return
+  workshopsLoading.value = true
+  try { activeWorkshops.value = (await api.workshops(token)).filter(workshop => workshop.id_estatus === 1) }
+  catch (err) { error.value = err instanceof Error ? err.message : 'No se pudieron consultar los talleres activos.' }
+  finally { workshopsLoading.value = false }
+}
+
 function formatRegistrationDate(value: string) {
   return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
@@ -162,7 +172,7 @@ async function updatePassword() {
 
 function logout() { session.clear(); void router.push('/ingresar') }
 function closeStaffDialog() { staffDialog.value = false; error.value = '' }
-onMounted(() => { void loadStaff(); void loadClientRegistrations() })
+onMounted(() => { void loadStaff(); void loadClientRegistrations(); void loadActiveWorkshops() })
 </script>
 
 <template>
@@ -204,7 +214,7 @@ onMounted(() => { void loadStaff(); void loadClientRegistrations() })
         </div>
 
         <div v-if="role === 'administrador' || role === 'recepcionista'" class="d-flex justify-end mb-4">
-          <div class="d-flex flex-wrap ga-2"><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-domain" class="text-none" @click="router.push('/talleres')">Ver talleres</v-btn><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-domain-plus" class="text-none" @click="router.push('/talleres/alta')">Dar de alta taller</v-btn><v-btn color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="openClientDialog">Registrar cliente</v-btn></div>
+          <div class="d-flex flex-wrap ga-2"><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-account-search" class="text-none" @click="router.push('/clientes')">Administrar clientes</v-btn><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-car-multiple" class="text-none" @click="router.push('/vehiculos')">Ver vehículos</v-btn><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-domain" class="text-none" @click="router.push('/talleres')">Ver talleres</v-btn><v-btn variant="tonal" rounded="lg" prepend-icon="mdi-domain-plus" class="text-none" @click="router.push('/talleres/alta')">Dar de alta taller</v-btn><v-btn color="primary" rounded="lg" prepend-icon="mdi-account-plus" class="text-none" @click="openClientDialog">Registrar cliente</v-btn></div>
         </div>
 
         <v-row class="module-grid">
@@ -260,6 +270,7 @@ onMounted(() => { void loadStaff(); void loadClientRegistrations() })
               <v-col cols="12" sm="6"><v-text-field v-model="newClient.primary_phone" label="Teléfono principal" type="tel" :rules="[requiredClientData, clientPhoneRule]" required /></v-col>
               <v-col cols="12" sm="6"><v-text-field v-model="newClient.alternate_phone" label="Teléfono alterno" type="tel" :rules="[requiredClientData, clientPhoneRule]" required /></v-col>
               <v-col cols="12" sm="6"><v-text-field v-model="newClient.email" label="Correo electrónico" type="email" :rules="[requiredClientData, emailRule]" required /></v-col>
+              <v-col cols="12"><v-select v-model="newClient.workshop_id" :items="activeWorkshops" item-title="name" item-value="id" label="Asociar a taller activo (opcional)" :loading="workshopsLoading" clearable hint="Solo se muestran talleres activos." persistent-hint /></v-col>
             </v-row>
             <v-alert v-if="error" type="error" variant="tonal" class="mt-3">{{ error }}</v-alert>
             <div class="dialog-actions mt-5"><v-btn variant="text" class="text-none" @click="closeClientDialog">Cancelar</v-btn><v-btn color="primary" type="submit" rounded="lg" class="text-none" :loading="busy">Guardar <v-icon end icon="mdi-arrow-right" /></v-btn></div>

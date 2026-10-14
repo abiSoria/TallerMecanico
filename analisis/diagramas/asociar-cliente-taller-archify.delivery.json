@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "df19f79c-a443-4469-aee9-3fcf6f2fac51",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\TallerMecanico\\analisis\\diagramas\\asociar-cliente-taller.workflow.json",
+  "output": "C:\\TallerMecanico\\analisis\\diagramas\\asociar-cliente-taller-archify.html",
+  "specification": {
+    "sha256": "cb36f2f85d441e70022ff932d70a81c85bb8a0babb05f9336dde69f897fc8cf1",
+    "bytes": 34072
+  },
+  "artifact": {
+    "sha256": "936e894c0121350f6cd19027ee66ed2b01e850e21c032cda4508e399dd5dc685",
+    "bytes": 761991
+  }
+}

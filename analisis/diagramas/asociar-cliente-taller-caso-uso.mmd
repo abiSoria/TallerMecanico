@@ -1,0 +1,12 @@
+flowchart LR
+  admin[Administrador]
+  reception[Recepcionista]
+  list((Consultar clientes activos))
+  associate((Asociar cliente a taller activo))
+  choose((Seleccionar taller activo))
+  persist((Guardar workshop_id))
+  admin --> list
+  reception --> list
+  list --> associate
+  associate --> choose
+  choose --> persist
