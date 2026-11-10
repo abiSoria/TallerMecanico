@@ -1,0 +1,18 @@
+11:49:10 p.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+11:49:38 p.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>
+12:07:09 a.m. [vite] (client) [console.warn] [Vue warn]: Failed to resolve component: v-card-actions
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <DashboardView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > 
+  at <RouterView> 
+  at <VApp> 
+  at <App>

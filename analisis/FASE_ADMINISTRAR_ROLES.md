@@ -1,5 +1,7 @@
 # UC-SEG-02 — Administrar roles
 
+**Versión de la documentación:** 1.1.0 · **Revisada:** 2026-11-05
+
 ## Objetivo y alcance
 
 Permitir al Administrador consultar roles con su estado, editar nombre y descripción, y suspender roles mediante baja lógica. Los registros no se borran físicamente. La autorización efectiva y las reglas de integridad se aplican en backend.

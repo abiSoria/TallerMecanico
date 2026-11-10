@@ -1,5 +1,7 @@
 # UC-CV-01 Registrar Cliente
 
+**Versión de la documentación:** 1.1.0 · **Revisada:** 2026-11-05
+
 ## Objetivo y alcance
 
 Permitir que un usuario autenticado y autorizado registre un cliente del taller. Para este caso de uso, los únicos roles autorizados son **Administrador** y **Recepcionista**. La entidad `Cliente` contiene nombre completo, calle, número, colonia, municipio, estado, teléfono principal, teléfono alterno, correo electrónico y estado activo.

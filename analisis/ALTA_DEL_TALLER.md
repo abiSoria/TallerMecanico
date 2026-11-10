@@ -1,5 +1,7 @@
 # UC-TM-01 — Dar de alta un taller mecánico
 
+**Versión de la documentación:** 1.1.0 · **Revisada:** 2026-11-05
+
 ## Objetivo y alcance
 
 Registrar un taller con datos fiscales, contacto, dirección y fotografía. El RFC normalizado es la clave de unicidad; el nombre puede repetirse. El taller nuevo queda Activo (id_estatus = 1). La API consulta un catálogo postal local para autocompletar dirección y valida la coherencia de la dirección al guardar cuando el CP existe en ese catálogo.

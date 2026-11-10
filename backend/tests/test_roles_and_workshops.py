@@ -18,7 +18,7 @@ from app.models import Client, Role, Status, User, Vehicle, Workshop
 from app.client_registration import ClientRegistrationIn, ClientUpdateIn, ClientWorkshopIn
 from app.schemas import StaffUserCreate
 from app.security import create_access_token
-from app.vehicle_registration import VehicleCreateIn, register_vehicle
+from app.vehicle_registration import VehicleCreateIn, VehicleListOut, VehicleUpdateIn, register_vehicle
 import app.vehicle_registration as vehicle_registration
 
 
@@ -286,6 +286,118 @@ class RoleWorkshopApiTests(unittest.TestCase):
             self.assertEqual(self.db.query(Vehicle).count(), 0)
         finally:
             vehicle_registration.VEHICLE_UPLOAD_DIR = old_upload_dir
+
+    def test_vehicle_search_normalizes_vin_and_plate_and_keeps_both_statuses(self):
+        client = self.client()
+        active = Vehicle(
+            client_id=client.id, vin=" 1hg-cm 82633a004352 ", plate=" ab-c 123 ",
+            make="honda", model="civic", year=2022, id_estatus=1,
+        )
+        inactive = Vehicle(
+            client_id=client.id, vin="9bwzzz377vt004251", plate="xyz-999",
+            make="vw", model="gol", year=2020, id_estatus=2,
+        )
+        self.db.add_all([active, inactive]); self.db.commit()
+
+        vin_results = main.list_vehicles(search=" 1HG-CM 82633A004352 ", db=self.db, _user=self.receptionist)
+        plate_results = main.list_vehicles(search=" Ab C-123 ", db=self.db, _user=self.receptionist)
+        all_results = main.list_vehicles(search=None, db=self.db, _user=self.receptionist)
+
+        self.assertEqual([item["id"] for item in vin_results], [active.id])
+        self.assertEqual([item["id"] for item in plate_results], [active.id])
+        self.assertEqual({item["id_estatus"] for item in all_results}, {1, 2})
+        self.assertEqual(vin_results[0]["client_name"], client.full_name)
+        self.assertEqual(vin_results[0]["status"], "Activo")
+
+    def test_vehicle_search_matches_id_and_returns_zero_results_cleanly(self):
+        client = self.client()
+        vehicle = Vehicle(
+            client_id=client.id, vin="1HGCM82633A004352", plate="ABC-123",
+            make="honda", model="civic", year=2022, id_estatus=1,
+        )
+        self.db.add(vehicle); self.db.commit()
+
+        id_results = main.list_vehicles(search=f"  {vehicle.id}  ", db=self.db, _user=self.receptionist)
+        not_found = main.list_vehicles(search="NO-EXISTE", db=self.db, _user=self.receptionist)
+        separators_only = main.list_vehicles(search=" -- ", db=self.db, _user=self.receptionist)
+
+        self.assertEqual([item["id"] for item in id_results], [vehicle.id])
+        self.assertEqual(not_found, [])
+        self.assertEqual(separators_only, [])
+
+    def test_vehicle_list_endpoint_has_administrator_and_receptionist_guard(self):
+        route = next(route for route in main.app.routes if getattr(route, "path", None) == "/api/v1/vehicles")
+        user_dependency = next(dependency for dependency in route.dependant.dependencies if dependency.name == "_user")
+
+        self.assertIs(user_dependency.call(self.receptionist), self.receptionist)
+        with self.assertRaises(HTTPException) as denied:
+            user_dependency.call(self.suspended_user)
+        self.assertEqual(denied.exception.status_code, 403)
+
+    def test_vehicle_update_changes_editable_fields_and_preserves_vin_relations_and_status(self):
+        client = self.client()
+        vehicle = Vehicle(
+            client_id=client.id, vin="1HGCM82633A004352", plate="ABC-123",
+            make="honda", model="civic", year=2022, version="lx", color="rojo",
+            mileage=1000, id_estatus=2,
+        )
+        self.db.add(vehicle); self.db.commit()
+        payload = VehicleUpdateIn(
+            vin="VIN-MODIFICADO", plate=" xyz-789 ", make=" Toyota ", model=" Corolla ",
+            year=2024, version=" LE ", color=" Azul ", mileage=2500,
+        )
+
+        result = main.update_vehicle(vehicle.id, payload, self.db, self.receptionist)
+        saved = self.db.query(Vehicle).filter_by(id=vehicle.id).one()
+
+        self.assertEqual(result["plate"], "XYZ-789")
+        self.assertEqual(result["client_id"], client.id)
+        self.assertEqual(result["client_name"], client.full_name)
+        self.assertEqual(result["status"], "Suspendido")
+        self.assertEqual(saved.vin, "1HGCM82633A004352")
+        self.assertEqual((saved.make, saved.model, saved.version, saved.color), ("toyota", "corolla", "le", "azul"))
+        self.assertEqual((saved.year, saved.mileage, saved.id_estatus), (2024, 2500, 2))
+        self.assertNotIn("vin", VehicleUpdateIn.model_fields)
+        self.assertEqual(VehicleListOut.model_validate(result).id, vehicle.id)
+
+    def test_vehicle_update_rejects_missing_or_invalid_required_fields(self):
+        with self.assertRaises(ValidationError):
+            VehicleUpdateIn(plate="ABC-123", make="Honda")
+        with self.assertRaises(ValidationError):
+            VehicleUpdateIn(
+                plate="ABC-123", make="Honda", model="Civic", year=2022,
+                version="  ", color="Rojo", mileage=100,
+            )
+        with self.assertRaises(ValidationError):
+            VehicleUpdateIn(
+                plate="A", make="Honda", model="Civic", year=2022,
+                version="LX", color="Rojo", mileage=-1,
+            )
+
+    def test_vehicle_update_rejects_duplicate_plate_and_unknown_vehicle(self):
+        client = self.client()
+        first = Vehicle(client_id=client.id, vin="1HGCM82633A004352", plate="ABC-123", make="honda", model="civic", year=2022)
+        second = Vehicle(client_id=client.id, vin="9BWZZZ377VT004251", plate="XYZ-789", make="vw", model="gol", year=2020)
+        self.db.add_all([first, second]); self.db.commit()
+        payload = VehicleUpdateIn(plate="XYZ-789", make="Honda", model="Civic", year=2023, version="LX", color="Azul", mileage=500)
+
+        with self.assertRaises(HTTPException) as duplicate:
+            main.update_vehicle(first.id, payload, self.db, self.receptionist)
+        self.assertEqual(duplicate.exception.status_code, 409)
+        missing_payload = VehicleUpdateIn(plate="NEW-123", make="Honda", model="Civic", year=2023, version="LX", color="Azul", mileage=500)
+        with self.assertRaises(HTTPException) as missing:
+            main.update_vehicle(99999, missing_payload, self.db, self.receptionist)
+        self.assertEqual(missing.exception.status_code, 404)
+
+    def test_vehicle_update_endpoint_has_administrator_and_receptionist_guard(self):
+        route = next(route for route in main.app.routes if getattr(route, "path", None) == "/api/v1/vehicles/{vehicle_id}")
+        user_dependency = next(dependency for dependency in route.dependant.dependencies if dependency.name == "_user")
+
+        self.assertIs(user_dependency.call(self.receptionist), self.receptionist)
+        self.assertIs(user_dependency.call(self.admin), self.admin)
+        with self.assertRaises(HTTPException) as denied:
+            user_dependency.call(self.suspended_user)
+        self.assertEqual(denied.exception.status_code, 403)
 
     def valid_png(self, size=128):
         import struct

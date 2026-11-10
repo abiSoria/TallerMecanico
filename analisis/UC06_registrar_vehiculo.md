@@ -1,5 +1,7 @@
 # UC-06 — Registrar vehículo
 
+**Versión de la documentación:** 1.1.0 · **Revisada:** 2026-11-05
+
 ## Objetivo y alcance
 
 Registrar un vehículo desde la fila de un cliente activo, guardarlo relacionado con ese cliente y con estatus Activo. Incluye validación de entrada, permisos, control de VIN/placa duplicados, fotografía opcional y persistencia. No incluye órdenes de reparación ni otras operaciones sobre vehículos.

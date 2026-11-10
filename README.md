@@ -1,88 +1,96 @@
 # Taller Mecánico
 
-Proyecto académico con SPA Vue 3 + TypeScript + Vite + Vuetify 3, API FastAPI y MySQL. Incluye alta de clientes, login JWT, consulta de perfil y cambio autenticado de contraseña. El registro público siempre crea usuarios con rol `cliente`; la asignación de roles internos requiere una acción administrativa protegida que deberá añadirse al módulo de administración.
+**Versión de la documentación:** 1.3.0 · **Revisada:** 2026-11-10
 
-## Estructura
+Aplicación web para administrar operaciones de un taller mecánico. El repositorio contiene una SPA Vue, una API FastAPI y un esquema MySQL. La autorización se aplica en el backend; la interfaz adapta la navegación al rol activo.
+
+## Funcionalidad
+
+- Registro público de cuentas de cliente e inicio de sesión con JWT.
+- Consulta de perfil, cambio y recuperación de contraseña.
+- Administración de usuarios internos y roles por parte de un administrador.
+- Registro y consulta de clientes, talleres y vehículos; la administración de vehículos permite actualizarlos mediante un modal con VIN inmutable.
+- Búsqueda local de códigos postales SEPOMEX para apoyar el alta de talleres.
+- Auditoría de operaciones de administración y registro.
+
+Las órdenes de trabajo, diagnósticos, refacciones y notificaciones forman parte del dominio previsto, pero no se deben considerar flujos operativos completos solo porque existan entidades o secciones visuales. Revisa los casos de uso para conocer el alcance implementado y sus pruebas pendientes.
+
+## Tecnologías
+
+| Capa | Tecnologías | Responsabilidad |
+| --- | --- | --- |
+| Interfaz | Vue 3, TypeScript, Vite, Vuetify 3 | Formularios, navegación, validación de experiencia de usuario y consumo de API. |
+| API | Python 3.11+, FastAPI, Pydantic, SQLAlchemy | Validación autoritativa, autenticación, autorización, lógica de aplicación y persistencia. |
+| Datos | MySQL 8+ | Usuarios, roles, clientes, talleres, vehículos y auditoría. |
+
+## Estructura principal
 
 ```text
 TallerMecanico/
-├── database/
-│   └── init.sql
+├── analisis/                 # Casos de uso, decisiones y evidencia
 ├── backend/
-│   ├── .env.example
-│   ├── requirements.txt
-│   └── app/
-│       ├── auth.py          # identidad JWT y guardas RBAC reutilizables
-│       ├── config.py        # configuración desde variables de entorno
-│       ├── database.py      # motor y sesión SQLAlchemy/MySQL
-│       ├── main.py          # endpoints auth y salud
-│       ├── models.py        # usuarios, roles, clientes, autos, órdenes, auditoría
-│       ├── schemas.py       # modelos y validación de API
-│       └── security.py      # BCrypt y tokens JWT
-└── frontend/
-    ├── .env.example
-    ├── package.json
-    ├── vite.config.ts
-    └── src/
-        ├── api.ts
-        ├── main.ts
-        ├── router.ts
-        ├── session.ts
-        ├── validation.ts
-        ├── style.css
-        └── views/
-            ├── AuthView.vue
-            └── DashboardView.vue
+│   ├── app/                  # API, autenticación, administración y servicios de dominio
+│   └── tests/                # Pruebas del backend
+├── database/
+│   ├── init.sql              # Esquema para una base nueva
+│   └── migrations/           # Cambios incrementales de esquema
+├── frontend/
+│   └── src/
+│       ├── api.ts            # Cliente y contratos HTTP
+│       ├── router.ts         # Rutas y guardas de navegación
+│       ├── session.ts        # Estado de sesión
+│       ├── validation.ts     # Validaciones de formularios
+│       └── views/            # Pantallas de la aplicación
+└── spec/                     # Orquestador, skills y documentación técnica
 ```
 
-## Seguridad implementada
-
-- BCrypt con costo 12; sólo se persiste el hash. La política acepta de 12 a 72 bytes y exige mayúscula, minúscula, dígito y símbolo.
-- JWT firmado HS256, vencimiento configurable y rol incluido en el token; `current_user` comprueba además que la cuenta siga activa. `require_roles(...)` protege futuros endpoints por rol.
-- El alta pública fuerza el rol cliente en el servidor. Los usuarios no pueden elegir ni elevar su rol desde el formulario.
-- Los errores de login no revelan si una cuenta existe; cambio de clave exige sesión y clave actual y revoca la sesión de frontend al terminar.
-- Las reglas de nombre, correo, teléfono y clave están duplicadas en el frontend y backend. El backend es la autoridad final.
-- El token se mantiene en memoria para reducir exposición a XSS por almacenamiento web persistente; al recargar la pestaña, se solicita login de nuevo. En producción, usar HTTPS, secretos gestionados, rate limiting, políticas de respaldo y revisión de dependencias.
+Módulos de backend relevantes: `main.py` registra rutas; `auth.py` valida identidad y roles; `administration.py` contiene operaciones administrativas, talleres y catálogo postal; `client_registration.py` y `vehicle_registration.py` implementan flujos de dominio; `password_recovery.py` gestiona recuperación; `models.py`, `schemas.py`, `database.py` y `security.py` definen persistencia, contratos, sesiones y seguridad.
 
 ## Requisitos
 
-- Python 3.11 o superior.
-- Node.js 20.19+ o 22.12+ (requisito de las versiones actuales de Vite).
-- MySQL 8.0+ y npm.
+- Python 3.11 o posterior.
+- Node.js 20.19+ o 22.12+ y npm.
+- MySQL 8.0 o posterior.
 
-## Arranque local en Windows PowerShell
+## Inicio local en Windows PowerShell
 
-### 1. Base MySQL
+### 1. Base de datos
 
-Inicia el servicio MySQL. En una terminal con acceso administrativo:
+Para una instalación nueva, inicia MySQL y aplica `database/init.sql` desde una terminal con el cliente `mysql` instalado. En PowerShell:
 
 ```powershell
-cmd /c "mysql -u root -p < database\init.sql"
+Get-Content -Raw .\database\init.sql | mysql -u root -p
 ```
 
-El script crea `taller_mecanico`, el usuario local `taller_app`, las tablas e inserta los seis roles. Antes de ejecutarlo, cambia `CAMBIA_ESTA_CLAVE` tanto en el script como en el `.env` del backend. Si tu usuario de aplicación necesita conectarse desde otro host, ajusta `'taller_app'@'localhost'` según tu política local.
+Para una base ya existente, **no vuelvas a aplicar `init.sql`**. Revisa las migraciones en `database/migrations/` y el caso de uso correspondiente; algunas requieren permisos DDL. Cambia los valores de ejemplo antes de usar credenciales locales.
 
-### 2. Backend FastAPI
+### 2. API
 
 ```powershell
 cd backend
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-py -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Edita `backend/.env`: establece la clave de MySQL y `JWT_SECRET_KEY` con un valor aleatorio secreto (por ejemplo, genera uno con `py -c "import secrets; print(secrets.token_urlsafe(48))"`). Luego arranca:
+Configura `DATABASE_URL` y `JWT_SECRET_KEY` en `backend/.env`. Genera un secreto aleatorio de al menos 32 bytes, por ejemplo:
+
+```powershell
+py -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Inicia la API desde `backend/`:
 
 ```powershell
 uvicorn app.main:app --reload
 ```
 
-API: `http://localhost:8000`; OpenAPI interactivo: `http://localhost:8000/docs`; salud: `http://localhost:8000/health`.
+La API queda en `http://127.0.0.1:8000`; documentación OpenAPI en `/docs` y comprobación de disponibilidad en `/health`.
 
-### 3. Frontend Vue/Vite
+### 3. Interfaz
 
-En otra terminal desde la carpeta del proyecto:
+En otra terminal:
 
 ```powershell
 cd frontend
@@ -91,58 +99,34 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173`. Configura `VITE_API_URL` en `frontend/.env` si FastAPI no está en `http://localhost:8000/api/v1`. Para generar el bundle: `npm run build`.
+Abre `http://127.0.0.1:5173`. Configura `VITE_API_URL` en `frontend/.env` si la API usa otro origen o prefijo.
 
-## Endpoints de autenticación
+## Primer administrador
 
-| Método | Ruta | Acceso | Resultado |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/auth/register` | público | Crea cliente + perfil e inicia sesión |
-| `POST` | `/api/v1/auth/login` | público | Valida BCrypt y emite JWT |
-| `GET` | `/api/v1/auth/me` | Bearer JWT | Devuelve el usuario y rol actuales |
-| `POST` | `/api/v1/auth/change-password` | Bearer JWT | Valida clave actual y sustituye el hash |
-| `GET` | `/api/v1/admin/users` | Administrador | Lista las cuentas internas |
-| `POST` | `/api/v1/admin/users` | Administrador | Crea cuentas internas con un rol asignado |
-
-## Primer acceso administrativo
-
-Después de aplicar el SQL y configurar `backend/.env`, crea el primer administrador desde `backend`:
+Con el esquema aplicado y el backend configurado, ejecuta desde `backend/`:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-py -m app.bootstrap_admin
+python -m app.bootstrap_admin
 ```
 
-El asistente solicita nombre, correo y contraseña de forma interactiva. Sólo funciona si aún no existe un administrador. Después, inicia sesión en el portal y usa **Agregar al equipo** para crear accesos de recepcionista, asesor de servicio y técnico. Cada persona inicia sesión con su propio correo y contraseña. El perfil `sistema` se reserva para procesos internos y no se ofrece como cuenta humana.
+El asistente crea el primer administrador si aún no existe. Las cuentas internas posteriores se crean desde la administración protegida. El rol `sistema` se reserva para procesos internos.
 
-El panel muestra una experiencia adecuada para cada perfil. Las secciones de clientes, vehículos, órdenes, diagnósticos, refacciones y notificaciones son la siguiente ampliación funcional del proyecto.
+## Seguridad y límites
 
-### Recorrido manual de verificación
+- El alta pública asigna siempre el rol `cliente`; la asignación de roles internos requiere autorización administrativa en el servidor.
+- Las contraseñas se almacenan como hash BCrypt; el secreto JWT y la conexión de base de datos deben configurarse fuera del control de versiones.
+- El frontend mantiene el token en memoria; recargar la pestaña puede requerir iniciar sesión de nuevo.
+- Validaciones y controles visuales del frontend no sustituyen las validaciones ni permisos de la API.
+- En despliegues se requieren HTTPS, secretos gestionados, respaldos, limitación de intentos y revisión de dependencias.
 
-Con MySQL y FastAPI encendidos, abre `/docs` y prueba en orden:
+## Documentación relacionada
 
-1. `POST /auth/register` con un correo nuevo y clave segura. Debe responder `201`, devolver un token y asignar `role: cliente`. Repite el mismo correo: debe responder `409`.
-2. `POST /auth/login` con la clave correcta: `200` y JWT. Con una clave incorrecta: `401` con mensaje genérico.
-3. Pulsa **Authorize** en Swagger con el token y llama `GET /auth/me`: debe devolver el usuario autenticado.
-4. Llama `POST /auth/change-password` con `current_password` y otra clave válida: debe responder `204`. Clave actual incorrecta debe dar `400`.
-5. Inicia sesión con la clave anterior: `401`. Inicia con la clave nueva: `200`. En el panel, el cambio de clave también borra la sesión de frontend y redirige a login.
-6. Prueba contraseñas cortas o sin mayúscula, número o símbolo en el formulario y directamente en la API. El formulario las marca y FastAPI debe rechazar la petición con `422`.
+- [Índice y guía de análisis](analisis/README.md)
+- [UC-CV-01: registro de clientes](README_UC-CV-01_Registrar_Cliente.md)
+- [UC-CV-09: gestión del estado del vehículo](analisis/UC09_gestionar_estado_vehiculo.md)
+- [Casos de uso y análisis](analisis/README.md)
+- [Orquestador y mapa completo de Markdown](spec/orquestador/orquestador.md)
+- [Guía técnica del backend](spec/documentacion/backend/documentacion-backend.md)
+- [Guía técnica del frontend](spec/documentacion/frontend/documentacion-frontend.md)
 
-Este recorrido se ejecutó localmente: registro asigna el rol cliente, login y perfil responden correctamente, el cambio de contraseña invalida la clave anterior y un técnico no puede listar usuarios administrativos.
-
-Ejemplo de alta:
-
-```json
-{
-  "full_name": "Ana López",
-  "email": "ana@example.com",
-  "phone": "+52 55 1234 5678",
-  "password": "EjemploSeguro#2026"
-}
-```
-
-El panel ofrece navegación visual por rol. La consulta real de órdenes requiere implementar endpoints operativos y asociar vehículos; los modelos y tablas iniciales ya están definidos. Diagnósticos, autorizaciones, refacciones y notificaciones quedan como ampliaciones del ciclo operativo.
-
-## Roles iniciales
-
-El SQL crea `administrador`, `recepcionista`, `asesor_servicio`, `tecnico`, `cliente` y `sistema`. El asistente local `python -m app.bootstrap_admin` crea el primer administrador una sola vez; las cuentas internas posteriores se administran desde el panel y el servidor exige el rol `administrador`.
+Consulta esos documentos para límites funcionales, criterios de aceptación y evidencia. Los resultados de prueba citados en un caso de uso son históricos y no garantizan que el estado actual haya sido verificado de nuevo.

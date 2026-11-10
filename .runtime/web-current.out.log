@@ -1,0 +1,12 @@
+
+> taller-mecanico-frontend@1.0.0 dev
+> vite --host 127.0.0.1 --port 5173
+
+
+  VITE v8.3.2  ready in 3001 ms
+
+  ➜  Local:   http://127.0.0.1:5173/
+  ➜  press h + enter to show help
+11:58:57 p.m. [vite] (client) hmr update /src/views/VehicleListView.vue, /src/views/AuthView.vue, /src/views/RoleManagementView.vue, /src/views/DashboardView.vue, /src/views/PasswordRecoveryView.vue, /src/views/WorkshopListView.vue, /src/views/ClientManagementView.vue, /src/views/WorkshopCreateView.vue
+11:59:48 p.m. [vite] (client) hmr update /src/views/VehicleListView.vue
+12:00:07 a.m. [vite] (client) hmr update /src/views/VehicleListView.vue

@@ -1,5 +1,7 @@
 # UC-SEG-01 — Crear roles
 
+**Versión de la documentación:** 1.1.0 · **Revisada:** 2026-11-05
+
 ## Objetivo y alcance
 
 Permitir al Administrador crear un rol con nombre y descripción opcional. El backend recorta los espacios exteriores del nombre, calcula una forma normalizada para detectar duplicados, asigna un código interno estable al rol nuevo y lo guarda como Activo. La creación también deja un evento de auditoría en la misma transacción.

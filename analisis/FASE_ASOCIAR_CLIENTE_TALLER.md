@@ -1,5 +1,7 @@
 # Asociar un cliente a un taller mecánico activo
 
+**Versión de la documentación:** 1.1.0 · **Revisada:** 2026-11-05
+
 ## Identificación, objetivo y alcance
 
 **Caso de uso:** Asociar un cliente a un taller mecánico activo. La documentación existente consultada no asigna un identificador UC a este proceso; se mantiene el nombre y no se inventa un código.

@@ -1,4 +1,2 @@
-INFO:     Started server process [24288]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Will watch for changes in these directories: ['C:\\TallerMecanico\\backend']
+ERROR:    [WinError 10013] Intento de acceso a un socket no permitido por sus permisos de acceso

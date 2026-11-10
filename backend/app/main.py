@@ -1,8 +1,9 @@
 """API inicial para registro, autenticación, cambio de contraseña y salud."""
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile, status
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import re
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 from pydantic import ValidationError
@@ -15,7 +16,10 @@ from app.security import create_access_token, hash_password, verify_password
 from app.client_registration import ClientAdminOut, ClientBuilder, ClientOut, ClientRegistrationAuditOut, ClientRegistrationFacade, ClientRegistrationIn, ClientUpdateIn, ClientWorkshopIn, ContactFormatStrategy
 from app.password_recovery import ForgotPasswordIn, ResetPasswordIn, request_password_reset, reset_password
 from app.administration import router as administration_router
-from app.vehicle_registration import VEHICLE_UPLOAD_DIR, VehicleCreateIn, VehicleOut, register_vehicle
+from app.vehicle_registration import (
+    VEHICLE_UPLOAD_DIR, VehicleCreateIn, VehicleListOut, VehicleOut, VehicleStatusIn, VehicleUpdateIn,
+    normalized_identifier_expression, normalize_vehicle_search, register_vehicle, set_vehicle_active, update_vehicle as update_vehicle_record,
+)
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Authorization", "Content-Type"])
@@ -147,19 +151,71 @@ async def create_client_vehicle(
     return VehicleOut.model_validate(vehicle)
 
 
-@app.get(f"{settings.api_prefix}/vehicles")
-def list_vehicles(db: Session = Depends(get_db), _user: User = Depends(require_roles("administrador", "recepcionista"))):
+@app.get(f"{settings.api_prefix}/vehicles", response_model=list[VehicleListOut])
+def list_vehicles(
+    search: str | None = Query(default=None, max_length=64),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_roles("administrador", "recepcionista")),
+):
     try:
-        rows = db.query(Vehicle, Client.full_name, Status.valor).join(Client, Client.id == Vehicle.client_id).join(
-            Status, Status.id_estatus == Vehicle.id_estatus
-        ).order_by(Vehicle.id.desc()).all()
+        query = db.query(Vehicle, Client.full_name).join(Client, Client.id == Vehicle.client_id)
+        if search is not None and search.strip():
+            normalized = normalize_vehicle_search(search)
+            if not normalized:
+                return []
+            filters = [
+                normalized_identifier_expression(Vehicle.vin) == normalized,
+                normalized_identifier_expression(Vehicle.plate) == normalized,
+            ]
+            if search.strip().isdecimal():
+                filters.append(Vehicle.id == int(search.strip()))
+            query = query.filter(or_(*filters))
+        rows = query.order_by(Vehicle.id.desc()).all()
         return [{
             **VehicleOut.model_validate(vehicle).model_dump(),
             "client_name": client_name,
-            "status": status_name,
-        } for vehicle, client_name, status_name in rows]
+            "status": "Activo" if vehicle.is_active else "Inactivo",
+        } for vehicle, client_name in rows]
     except SQLAlchemyError as exc:
         raise HTTPException(status_code=500, detail={"code": "PERSISTENCE_ERROR", "message": "No se pudo consultar la lista de vehículos."}) from exc
+
+
+@app.put(f"{settings.api_prefix}/vehicles/{{vehicle_id}}", response_model=VehicleListOut)
+def update_vehicle(
+    vehicle_id: int,
+    payload: VehicleUpdateIn,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_roles("administrador", "recepcionista")),
+):
+    vehicle = update_vehicle_record(db, vehicle_id, payload)
+    try:
+        client_name = db.query(Client.full_name).filter(Client.id == vehicle.client_id).one()[0]
+        return {
+            **VehicleOut.model_validate(vehicle).model_dump(),
+            "client_name": client_name,
+            "status": "Activo" if vehicle.is_active else "Inactivo",
+        }
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=500, detail={"code": "PERSISTENCE_ERROR", "message": "No se pudo consultar el vehículo actualizado."}) from exc
+
+
+@app.put(f"{settings.api_prefix}/vehicles/{{vehicle_id}}/status", response_model=VehicleListOut)
+def change_vehicle_status(
+    vehicle_id: int,
+    payload: VehicleStatusIn,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_roles("administrador", "recepcionista")),
+):
+    vehicle = set_vehicle_active(db, vehicle_id, payload.is_active, actor)
+    try:
+        client_name = db.query(Client.full_name).filter(Client.id == vehicle.client_id).one()[0]
+        return {
+            **VehicleOut.model_validate(vehicle).model_dump(),
+            "client_name": client_name,
+            "status": "Activo" if vehicle.is_active else "Inactivo",
+        }
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=500, detail={"code": "PERSISTENCE_ERROR", "message": "No se pudo consultar el estado del vehículo."}) from exc
 
 
 @app.get(f"{settings.api_prefix}/vehicles/{{vehicle_id}}/photo")

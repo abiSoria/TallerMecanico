@@ -18,6 +18,7 @@ export interface ClientRegistrationData {
 export type ClientEditableData = Omit<ClientRegistrationData, 'workshop_id'>
 export interface ClientRecord extends ClientEditableData { id: number; is_active: boolean; workshop_id: number | null; workshop_name: string | null }
 export interface VehicleRecord { id: number; client_id: number; client_name: string; vin: string | null; plate: string; make: string; model: string; year: number | null; version: string | null; color: string | null; mileage: number | null; photo_filename: string | null; id_estatus: number; is_active: boolean; status: string }
+export interface VehicleUpdateData { plate: string; make: string; model: string; year: number; version: string; color: string; mileage: number }
 export interface ClientRegistrationAudit { client_name: string; registered_by: string; registered_at: string }
 export class ApiError extends Error {
   constructor(message: string, readonly code?: string, readonly possibleClientId?: number) { super(message) }
@@ -72,7 +73,12 @@ export const api = {
   associateClientWorkshop: (token: string, id: number, workshop_id: number) => request<ClientRecord>(`/clients/${id}/workshop`, { method: 'PUT', body: JSON.stringify({ workshop_id }) }, token),
   deactivateClient: (token: string, id: number) => request<{ message: string }>(`/clients/${id}`, { method: 'DELETE' }, token),
   registerVehicle: (token: string, clientId: number, data: FormData) => request<VehicleRecord>(`/clients/${clientId}/vehicles`, { method: 'POST', body: data }, token),
-  vehicles: (token: string) => request<VehicleRecord[]>('/vehicles', {}, token),
+  updateVehicle: (token: string, id: number, data: VehicleUpdateData) => request<VehicleRecord>(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token),
+  setVehicleActive: (token: string, id: number, is_active: boolean) => request<VehicleRecord>(`/vehicles/${id}/status`, { method: 'PUT', body: JSON.stringify({ is_active }) }, token),
+  vehicles: (token: string, search = '') => {
+    const query = search ? `?${new URLSearchParams({ search })}` : ''
+    return request<VehicleRecord[]>(`/vehicles${query}`, {}, token)
+  },
   vehiclePhoto: async (token: string, id: number) => {
     let response: Response
     try { response = await fetch(`${API}/vehicles/${id}/photo`, { headers: { Authorization: `Bearer ${token}` } }) }

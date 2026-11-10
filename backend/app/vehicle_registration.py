@@ -7,12 +7,14 @@ from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.administration import IMAGE_TYPES, MAX_PHOTO_BYTES
 from app.config import settings
-from app.models import Client, User, Vehicle
+from app.models import AuditLog, Client, User, Vehicle
 
 VEHICLE_UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads" / "vehicles"
 VIN_PATTERN = re.compile(settings.vehicle_vin_pattern)
@@ -54,6 +56,35 @@ class VehicleCreateIn(BaseModel):
             raise ValueError("Este dato es obligatorio.")
         return normalized
 
+class VehicleUpdateIn(BaseModel):
+    plate: str = Field(min_length=2, max_length=12)
+    make: str = Field(min_length=1, max_length=60)
+    model: str = Field(min_length=1, max_length=60)
+    year: int = Field(ge=1886, le=MAX_YEAR)
+    version: str = Field(min_length=1, max_length=80)
+    color: str = Field(min_length=1, max_length=40)
+    mileage: int = Field(ge=0)
+
+    @field_validator("plate")
+    @classmethod
+    def validate_plate(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if not PLATE_PATTERN.fullmatch(normalized):
+            raise ValueError("La placa debe contener de 2 a 12 letras, números o guiones.")
+        return normalized
+
+    @field_validator("make", "model", "version", "color")
+    @classmethod
+    def normalize_description(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not normalized:
+            raise ValueError("Este dato es obligatorio.")
+        return normalized
+
+
+class VehicleStatusIn(BaseModel):
+    is_active: bool
+
 
 class VehicleOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -72,6 +103,70 @@ class VehicleOut(BaseModel):
     is_active: bool
 
 
+class VehicleListOut(VehicleOut):
+    client_name: str
+    status: str
+
+
+def normalize_vehicle_search(value: str) -> str:
+    """Canonicaliza VIN y placa para búsquedas sin distinguir guiones o espacios."""
+    return re.sub(r"[\s-]+", "", value.strip()).upper()
+
+
+def normalized_identifier_expression(column: ColumnElement[str | None]) -> ColumnElement[str]:
+    """Expresión SQL portable para comparar valores existentes con la forma canónica."""
+    expression = func.upper(func.trim(column))
+    for character in (" ", "-", "\t", "\r", "\n"):
+        expression = func.replace(expression, character, "")
+    return expression
+
+
+def update_vehicle(db: Session, vehicle_id: int, data: VehicleUpdateIn) -> Vehicle:
+    """Actualiza solo los campos editables y conserva VIN, cliente, estatus y fotografía."""
+    try:
+        vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).with_for_update().first()
+        if vehicle is None:
+            raise HTTPException(404, detail={"code": "VEHICLE_NOT_FOUND", "message": "No se encontró el vehículo."})
+        for field, value in data.model_dump().items():
+            setattr(vehicle, field, value)
+        db.commit()
+        db.refresh(vehicle)
+        return vehicle
+    except HTTPException:
+        db.rollback()
+        raise
+    except IntegrityError as exc:
+        db.rollback()
+        if "plate" in str(getattr(exc, "orig", "")).lower():
+            raise HTTPException(409, detail={"code": "DUPLICATE_VEHICLE", "message": "Ya existe otro vehículo con esa placa."}) from exc
+        raise HTTPException(500, detail={"code": "PERSISTENCE_ERROR", "message": "No se pudo actualizar el vehículo."}) from exc
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(500, detail={"code": "PERSISTENCE_ERROR", "message": "No se pudo actualizar el vehículo."}) from exc
+
+
+def set_vehicle_active(db: Session, vehicle_id: int, is_active: bool, actor: User) -> Vehicle:
+    """Cambia el estatus del vehículo sin eliminar su registro ni sus relaciones."""
+    try:
+        vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).with_for_update().first()
+        if vehicle is None:
+            raise HTTPException(404, detail={"code": "VEHICLE_NOT_FOUND", "message": "No se encontró el vehículo."})
+        target_status = 1 if is_active else 2
+        if vehicle.id_estatus != target_status:
+            vehicle.id_estatus = target_status
+            action = "vehicle.activated" if is_active else "vehicle.deactivated"
+            db.add(AuditLog(user_id=actor.id, action=action, detail=f"vehicle_id={vehicle.id}; plate={vehicle.plate}"))
+            db.commit()
+            db.refresh(vehicle)
+        else:
+            db.rollback()
+        return vehicle
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(500, detail={"code": "PERSISTENCE_ERROR", "message": "No se pudo cambiar el estado del vehículo."}) from exc
 async def read_vehicle_photo(photo: UploadFile | None) -> tuple[bytes | None, str | None]:
     if photo is None or not photo.filename:
         return None, None
